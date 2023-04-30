@@ -1,0 +1,4 @@
+Mech,0
+Mass,1
+Frac,2
+Dummy,3

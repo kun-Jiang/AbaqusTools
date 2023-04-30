@@ -1,0 +1,105 @@
+*Heading
+************************************************************************
+**			                Model definition                          **
+************************************************************************
+*Node, Nset = NTot
+*include, input=Model\Node.inp
+** ------------------------------------------------------------------ **
+**                    Model for the mechanical mesh
+*Element,type=CPE4T, elset=Element_Mech
+1, 1, 2, 4, 3
+** ------------------------------------------------------------------ **
+**                    Model for the fracture mesh
+*User element,nodes=4,type=U2,properties=3,coordinates=2,VARIABLES=20
+12
+*Element,type=U2, elset=Element_Frac
+3, 1, 2, 4, 3
+************************************************************************
+**			              MATERIAL DEFINITION
+************************************************************************
+** ------------------------------------------------------------------ **
+**                             Mechanical
+*Solid section, elset=Element_Mech, material=MatMech
+*Material, name=MatMech
+*Conductivity
+23.7
+**real Aluminum therm. cond. should be about 237.0
+*Specific heat
+1200.0
+*Density
+2700.0
+*Depvar
+20
+*User Material, constants=27
+**  1e-11, 0.3
+60e9,0.3
+** ------------------------------Fracture------------------------------
+** Define fracture properties for the grain boundaries and grain interior respectively
+*Uel property, elset=Element_Frac
+0.001, 1e2, 1
+**lc, gc, h
+************************************************************************
+**	              DEFINE BOUNDARY CONDITION
+************************************************************************
+*Nset, nset=NTop
+3,4
+*Nset, nset=NBot
+1,2
+*Nset, nset=NLeft
+1,3
+*Nset, nset=NRight
+2,4
+*Nset, nset=NTopL
+3
+*Nset, nset=NBotL
+1
+** ------------------------------------------------------------------ **
+**                     Initial boundaries conditions
+** *Boundary
+** NBot,2,2,0.0
+** NBotL,1,1,0.0
+** NTopL , 1 , 1 , 0.0
+**------------------------
+** Amplitude
+**------------------------
+*Amplitude, name=Amp-1
+             0.,              0.,             0.5,           0.01
+************************************************************************
+**                    SPECIFY THE ANALYSIS STEP
+**                          STEP: Step-1
+************************************************************************
+*Step, name=Streching,nlgeom=YES,inc=1000
+*Coupled Temperature-displacement, creep=none, deltmx=1000.
+0.001, 0.5, 1e-15, 0.05
+*controls, parameters=line search
+10,1.0,0.0001,0.25,0.10
+*controls, parameters=time incrementation
+,,,,,,,20,,,,,,
+** ----------------------------------------------------------------
+*Boundary
+NBot , 2, 2, 0
+NBotL , 1, 1, 0
+NTopL , 1, 1, 0
+*Boundary, Amplitude=Amp-1
+** NTop , 2, 2, 1
+NTop , 2, 2, 1
+************************************************************************
+**                          OUTPUT REQUESTS
+************************************************************************
+*Restart, write, frequency=0
+** 
+** FIELD OUTPUT: F-Output-1
+** 
+*Output, field, variable=PRESELECT
+*node output,nset=NTot
+u
+** *node output,nset=tempElement
+** u
+*element output,elset=Element_Mech
+SDV
+*Element Output, directions=YES
+** 
+** HISTORY OUTPUT: H-Output-1
+** 
+*Output, history, variable=PRESELECT
+*End Step
