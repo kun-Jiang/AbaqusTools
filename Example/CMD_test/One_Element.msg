@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2021                                  Date 27-4ÔÂ-2023   Time 23:17:19
+   Abaqus 2021                                  Date 09-5ÔÂ-2023   Time 00:41:45
    For use by Supplied by Team-SolidSQUAD under license from Dassault Systemes or its subsidiary.
 
                                                                                  
@@ -946,6 +946,6 @@
 
      JOB TIME SUMMARY
        USER TIME (SEC)      =  0.10000    
-       SYSTEM TIME (SEC)    =   0.0000    
-       TOTAL CPU TIME (SEC) =  0.10000    
-       WALLCLOCK TIME (SEC) =          3
+       SYSTEM TIME (SEC)    =  0.10000    
+       TOTAL CPU TIME (SEC) =  0.20000    
+       WALLCLOCK TIME (SEC) =          1

@@ -36,6 +36,11 @@ class AbaqusGUI(tk.Tk):
         self.notebook.add(self.tab_Ele_num_offset, text='Offset')
         create_Ele_num_offset_gui(self.tab_Ele_num_offset)
         
+        # Create a tabwidget for extracting data from odb file
+        self.tab_odb_extract = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_odb_extract, text='ODB Extract')
+        create_odb_extract_gui(self.tab_odb_extract)
+        
 class create_cmd_gui():
     def __init__(self, parent):
         self.tab_cmd = parent
@@ -56,7 +61,7 @@ class create_cmd_gui():
                                             command=self.update_combobox)
          
         # Create a button to run abaqus, and run it in a new thread by the function Run_in_new_thread
-        self.CMD_button_run_abaqus = ttk.Button(self.tab_cmd, text="执行有限元计算", 
+        self.CMD_button_run_abaqus = ttk.Button(self.tab_cmd, text="Call ABAQUS", 
                                             command=lambda: Run_in_new_thread(self.run_abaqus))
         # Create a spinbox, default value is 2, indicate 2 cores
         self.cpu_cores_label = ttk.Label(self.tab_cmd, text="CPU cores:")
@@ -90,6 +95,7 @@ class create_cmd_gui():
         self.check_ask_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W )
         # Run button
         self.CMD_button_run_abaqus.grid(row=6, column=1, padx=5, pady=5)
+        
     def browse_working_directory(self):
         # 打开文件对话框
         file_path = filedialog.askdirectory()
@@ -159,12 +165,12 @@ class create_InpSplit_gui():
     def __init__(self, parent):
         self.tab_InpSplit = parent
         # 创建ttk风格的界面元素
-        self.label_InpSplit_file = ttk.Label(self.tab_InpSplit, text='Inp文件路径:')
+        self.label_InpSplit_file = ttk.Label(self.tab_InpSplit, text='Inp file path:')
         self.entry_InpSplit = ttk.Entry(self.tab_InpSplit,width=40)
-        self.button_browse_InpSplit = ttk.Button(self.tab_InpSplit, text="选择文件", 
+        self.button_browse_InpSplit = ttk.Button(self.tab_InpSplit, text="Select", 
                                                 command=self.browse_InpSplit_file)
         
-        self.button_run_InpSplit = ttk.Button(self.tab_InpSplit,text='进行Inp文件切分',
+        self.button_run_InpSplit = ttk.Button(self.tab_InpSplit,text='Execute split',
                                                 command=lambda: Run_in_new_thread(self.run_InpSplit))
         # 界面元素布局
         self.label_InpSplit_file.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
@@ -185,7 +191,7 @@ class create_InpSplit_gui():
                     
     def browse_InpSplit_file(self):
         # 打开文件对话框
-        file_path = filedialog.askopenfilename()
+        file_path = filedialog.askopenfilename(filetypes=[("Inp files", "*.inp"), ("All files", "*.*")])
 
         # 将选择的文件路径显示在输入框中
         self.entry_InpSplit.delete(0, tk.END)
@@ -197,9 +203,9 @@ class create_Ele_num_offset_gui():
         # *********************************************************************** #
         #                             Get input file                              #
         # *********************************************************************** #
-        self.Offset_origin_file_label = ttk.Label(self.tab_Ele_num_offset, text='Inp文件路径:')
+        self.Offset_origin_file_label = ttk.Label(self.tab_Ele_num_offset, text='Inp file path:')
         self.Offset_origin_file_entry = ttk.Entry(self.tab_Ele_num_offset,width=40)
-        self.Button_browse_offset = ttk.Button(self.tab_Ele_num_offset, text="选择文件", 
+        self.Button_browse_offset = ttk.Button(self.tab_Ele_num_offset, text="Select", 
                                                  command=self.browse_Offset_file)
         # *********************************************************************** #
         #                       Creating the text input box                       #
@@ -280,7 +286,7 @@ class create_Ele_num_offset_gui():
     
     def browse_Offset_file(self):
         # 打开文件对话框
-        file_path = filedialog.askopenfilename()
+        file_path = filedialog.askopenfilename(filetypes=[("Inp files", "*.inp"), ("All files", "*.*")])
 
         # 将选择的文件路径显示在输入框中
         self.Offset_origin_file_entry.delete(0, tk.END)
@@ -314,6 +320,59 @@ class create_Ele_num_offset_gui():
         except FileNotFoundError:
             tk.messagebox.showerror("错误", "找不到Inp文件或Python执行文件！")
 
+class create_odb_extract_gui():
+    def __init__(self, parent):
+        self.tab_odb_extract = parent
+        # Get all the files in the folder
+        self.odb_extract_file_label = ttk.Label(self.tab_odb_extract, text="ODB file path")
+        self.odb_extract_file_entry = ttk.Entry(self.tab_odb_extract, width=40)
+        self.button_select_odb_file = ttk.Button(self.tab_odb_extract, text="Select", 
+                                            command=self.browse_odb_file)
+        # Set the keywords of the field output variables
+        self.odb_extract_keyword_label = ttk.Label(self.tab_odb_extract, text="Keyword:")
+        self.odb_extract_keyword_entry = ttk.Entry(self.tab_odb_extract, width=40)
+        
+        # *********************************************************************** #
+        # Layout the GUI
+        # *********************************************************************** #
+        # Get odb file
+        self.odb_extract_file_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.odb_extract_file_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+        self.button_select_odb_file.grid(row=0, column=2, padx=5, pady=5)
+        # Get output field keyword
+        self.odb_extract_keyword_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.odb_extract_keyword_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        # # Create a combobox for displaying inp files
+        # self.odb_file_label = ttk.Label(self.tab_odb_extract, text="Select odb file:")
+        # self.odb_file_combobox = ttk.Combobox(self.tab_odb_extract, width=37)
+        
+    def browse_odb_file(self):
+        # 打开文件对话框
+        file_path = filedialog.askopenfilename(filetypes=[("ODB files", "*.odb"), ("All files", "*.*")])
+        # 将选择的文件路径显示在输入框中
+        self.odb_extract_file_entry.delete(0, tk.END)
+        self.odb_extract_file_entry.insert(0, file_path)
+        
+    def execute_odb_extract(self):
+        odb_file_path = self.odb_extract_file_entry.get()
+        output_option = self.odb_extract_keyword_entry.get()
+        
+    # def update_combobox(self):
+        # Display all field output variables in the combobox
+        # Get the keywoards of the field output variables
+        # self.current_frame.fieldOutputs.keys()
+        
+        # All_files = os.listdir(self.odb_extract_working_directory_entry.get())
+
+        # # Filter out only the .inp files
+        # CMD_inp_files = [f for f in All_files if f.endswith(".inp")]        
+        # # Update the combobox with the inp files
+        # self.CMD_inp_combobox["values"] = CMD_inp_files   
+        # # Filter out only the .for files
+        # CMD_for_files = [f for f in All_files if f.endswith(".for")]
+        # # Update the combobox with the for files
+        # self.CMD_for_combobox["values"] = CMD_for_files
+        
 class Run_in_new_thread():
     def __init__(self, func):
         self.func = func

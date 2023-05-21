@@ -5,7 +5,7 @@ Abaqus License Manager checked out the following licenses:
 Abaqus/Standard checked out 5 tokens from Flexnet server localhost.
 <9994 out of 9999 licenses remain available>.
 Begin Compiling Abaqus/Standard User Subroutines
-4/20/2023 5:07:39 PM
+5/9/2023 12:41:31 AM
 Intel(R) Visual Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 19.1.0.166 Build 20191121
 Copyright (C) 1985-2019 Intel Corporation.  All rights reserved.
 
@@ -14,15 +14,20 @@ Begin Linking Abaqus/Standard User Subroutines
   正在创建库 standardU.lib 和对象 standardU.exp
 libirc.lib(fast_mem_ops.obj) : warning LNK4210: 存在 .CRT 节；可能有未处理的静态初始值设定项或结束符
 End Linking Abaqus/Standard User Subroutines
-4/20/2023 5:07:45 PM
+5/9/2023 12:41:37 AM
 Begin Analysis Input File Processor
-4/20/2023 5:07:45 PM
+5/9/2023 12:41:37 AM
 Run pre.exe
-4/20/2023 5:07:51 PM
-Abaqus Error: Analysis Input File Processor exited with an error.
+5/9/2023 12:41:41 AM
+End Analysis Input File Processor
+Begin Abaqus/Standard Analysis
+5/9/2023 12:41:41 AM
+Run standard.exe
+5/9/2023 12:41:46 AM
+End Abaqus/Standard Analysis
 Begin SIM Wrap-up
-4/20/2023 5:07:53 PM
+5/9/2023 12:41:47 AM
 Run SMASimUtility.exe
-4/20/2023 5:07:54 PM
+5/9/2023 12:41:47 AM
 End SIM Wrap-up
-Abaqus/Analysis exited with errors
+Abaqus JOB One_Element COMPLETED

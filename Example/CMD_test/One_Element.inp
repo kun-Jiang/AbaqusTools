@@ -68,7 +68,7 @@
 **                    SPECIFY THE ANALYSIS STEP
 **                          STEP: Step-1
 ************************************************************************
-*Step, name=Streching,nlgeom=YES,inc=1000
+*Step, name=Stretching,nlgeom=YES,inc=1000
 *Coupled Temperature-displacement, creep=none, deltmx=1000.
 0.001, 0.5, 1e-15, 0.05
 *controls, parameters=line search
@@ -96,7 +96,7 @@ u
 ** *node output,nset=tempElement
 ** u
 *element output,elset=Element_Mech
-SDV
+SDV,EVOL
 *Element Output, directions=YES
 ** 
 ** HISTORY OUTPUT: H-Output-1

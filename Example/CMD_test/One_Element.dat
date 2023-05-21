@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2021                                  Date 27-4月-2023   Time 23:17:13
+   Abaqus 2021                                  Date 09-5月-2023   Time 00:41:40
    For use by Supplied by Team-SolidSQUAD under license from Dassault Systemes or its subsidiary.
 
 
@@ -18,7 +18,7 @@
                    used or reproduced only in accordance with the terms
                    of such license.
  
-                          On machine DESKTOP-8GAJ7K7 
+                          On machine KunJiang 
                           you are authorized to run
                           Abaqus/Standard until 31-Dec-2055
 
@@ -124,11 +124,11 @@
   *element output,elset=Element_Mech
   *Element Output, directions=YES
   *Amplitude, name=Amp-1
-  *Step, name=Streching,nlgeom=YES,inc=1000
+  *Step, name=Stretching,nlgeom=YES,inc=1000
   *Output, field, variable=PRESELECT
   *Output, history, variable=PRESELECT
-  *Step, name=Streching,nlgeom=YES,inc=1000
-  *Step, name=Streching,nlgeom=YES,inc=1000
+  *Step, name=Stretching,nlgeom=YES,inc=1000
+  *Step, name=Stretching,nlgeom=YES,inc=1000
   *Coupled Temperature-displacement, creep=none, deltmx=1000.
   *controls, parameters=line search
   *controls, parameters=time incrementation
@@ -142,7 +142,7 @@
   *End Step
 
  ***WARNING: THE *ELEMENT OUTPUT OPTION IS NOT SUPPORTED FOR USER ELEMENTS
-  *Step, name=Streching,nlgeom=YES,inc=1000
+  *Step, name=Stretching,nlgeom=YES,inc=1000
   *Coupled Temperature-displacement, creep=none, deltmx=1000.
   *Boundary
   *Boundary, Amplitude=Amp-1
@@ -167,13 +167,13 @@
 
 
      JOB TIME SUMMARY
-       USER TIME (SEC)      =  0.10000    
+       USER TIME (SEC)      =   0.0000    
        SYSTEM TIME (SEC)    =   0.0000    
-       TOTAL CPU TIME (SEC) =  0.10000    
+       TOTAL CPU TIME (SEC) =   0.0000    
        WALLCLOCK TIME (SEC) =          1
 1
 
-   Abaqus 2021                                  Date 27-4月-2023   Time 23:17:19
+   Abaqus 2021                                  Date 09-5月-2023   Time 00:41:45
    For use by Supplied by Team-SolidSQUAD under license from Dassault Systemes or its subsidiary.
 
                                                                                                STEP    1  INCREMENT    1
@@ -253,6 +253,6 @@
 
      JOB TIME SUMMARY
        USER TIME (SEC)      =  0.10000    
-       SYSTEM TIME (SEC)    =   0.0000    
-       TOTAL CPU TIME (SEC) =  0.10000    
-       WALLCLOCK TIME (SEC) =          3
+       SYSTEM TIME (SEC)    =  0.10000    
+       TOTAL CPU TIME (SEC) =  0.20000    
+       WALLCLOCK TIME (SEC) =          1
