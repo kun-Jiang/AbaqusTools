@@ -1,0 +1,59 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2021 replay file
+# Internal Version: 2020_03_06-22.50.37 167380
+# Run by 23050 on Sun May  7 18:49:52 2023
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=175.981246948242, 
+    height=131.874603271484)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='Model_Chem.odb')
+#: Model: D:/OneDrive/GitRepository/AbaqusTools/Example/ODB_Extract/Model_Chem.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       5
+#: Number of Node Sets:          7
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].odbDisplay.setFrame(step=0, frame=0 )
+session.viewports['Viewport: 1'].odbDisplay.setFrame(step=0, frame=0 )
+session.viewports['Viewport: 1'].odbDisplay.setFrame(step=0, frame=1 )
+session.viewports['Viewport: 1'].odbDisplay.setFrame(step=0, frame=2 )
+leaf = dgo.LeafFromElementSets(elementSets=("PART-1-1.ELE_MECH", ))
+session.viewports['Viewport: 1'].odbDisplay.displayGroup.replace(leaf=leaf)
+odb = session.odbs['D:/OneDrive/GitRepository/AbaqusTools/Example/ODB_Extract/Model_Chem.odb']
+xyList = xyPlot.xyDataListFromField(odb=odb, outputPosition=INTEGRATION_POINT, 
+    variable=(('S', INTEGRATION_POINT, ((INVARIANT, 'Mises'), )), ), 
+    elementSets=("PART-1-1.ELE_MECH", ))
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+curveList = session.curveSet(xyData=xyList)
+chart.setValues(curvesToPlot=curveList)
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)
+#: Warning: Requested operation will result in the creation of a very large number of xyDataObjects. Performance can be affected. Please reduce the number of specified entities using Display Group operations before re-performing this operation.
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(0.943396, 0, 0, -0.0242119, 0, 0.943396, 0, -0.0307184, 0, 0, 
+    0.943396, 0, 0, 0, 0, 1))
+session.viewports['Viewport: 1'].restore()
+session.viewports['Viewport: 1'].maximize()
+odb = session.odbs['D:/OneDrive/GitRepository/AbaqusTools/Example/ODB_Extract/Model_Chem.odb']
+session.viewports['Viewport: 1'].setValues(displayedObject=odb)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))

@@ -1,0 +1,58 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2021 replay file
+# Internal Version: 2020_03_06-22.50.37 167380
+# Run by 23050 on Sat May  6 20:17:59 2023
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=175.981246948242, 
+    height=131.874603271484)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='Model_Chem.odb')
+#: Model: D:/OneDrive/GitRepository/AbaqusTools/Example/ODB_Extract/Model_Chem.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       5
+#: Number of Node Sets:          7
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='UVARM2', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='UVARM1', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='UVARM3', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='UVARM5', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='UVARM2', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='EVOL', outputPosition=WHOLE_ELEMENT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='IVOL', outputPosition=INTEGRATION_POINT, )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='EVOL', outputPosition=WHOLE_ELEMENT, )
+session.viewports['Viewport: 1'].view.setValues(nearPlane=6.00739, 
+    farPlane=9.99261, width=3.73585, height=2.03784, viewOffsetX=0.0967666, 
+    viewOffsetY=-0.0261954)
+leaf = dgo.LeafFromElementSets(elementSets=("PART-1-1.ELDUMMY", ))
+session.viewports['Viewport: 1'].odbDisplay.displayGroup.replace(leaf=leaf)
+leaf = dgo.LeafFromElementSets(elementSets=("PART-1-1.ELE_MECH", ))
+session.viewports['Viewport: 1'].odbDisplay.displayGroup.replace(leaf=leaf)
+#: Warning: The selected Primary Variable is not available in the current frame for any elements in the current display group.
+leaf = dgo.LeafFromElementSets(elementSets=("PART-1-1.ELDUMMY", ))
+session.viewports['Viewport: 1'].odbDisplay.displayGroup.replace(leaf=leaf)
