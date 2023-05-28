@@ -33,7 +33,7 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
     # the file contains elements define information, so node number
     # in line don't need to be offseted.
     Offset_mode = 1
-    if InpFile_prefix == 'Element':
+    if 'element' in InpFile_prefix.lower():
         Offset_mode = 2
     print('Input file prefix : %s\tOffset mode : %d'%(InpFile_prefix,Offset_mode))
     print('Element number offset magnitude : %d'%Offset_Magnitude)

@@ -25,8 +25,9 @@ def Inp_Split(Directory,Inp_origin_file_path):
         line = InpFile_origin_lines[0]
         InpFile_origin_lines.remove(line)
         InpFile_New.write(line)
+        line = line.lower()
         # *******************************************************
-        if line == '*Node\n':
+        if '*node' in line:
             # Writing the Node.inp file
             NodeFile    = open("Node.inp",'w')
             temp_lines = list(InpFile_origin_lines)
@@ -47,13 +48,14 @@ def Inp_Split(Directory,Inp_origin_file_path):
             NodeFile.close()
             continue
         # *******************************************************
-        if ('Element' in line) and ('type' in line) or ('TYPE' in line):
+        if 'element' in line:
             # There must be a elset after the elements define (For example: *Element, type=***, elset=***)
             # Writing the ***.inp file which define the element(*** is the name of elset)
             if 'elset' in line:
                 elset_Name_temp  = line.split('elset=')[1]
                 elset_Name       = elset_Name_temp.split('\n')[0]
             else:
+                # If there not defines a elset, using the name of element type temporarily
                 elset_Name_temp  = line.split('type=')[1]
                 elset_Name       = elset_Name_temp.split('\n')[0]
                 print('There is not a name for the element set, using the name of element type temporarily\n%s'%elset_Name)
@@ -76,7 +78,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
                     
             elementFile.close()
         # *******************************************************
-        if '*Elset' in line:
+        if '*elset' in line:
             # Writing the ***.inp file (*** is the name of elset)
             elset_Name_temp = line.split('elset=')[1]
             if 'generate' in elset_Name_temp:
@@ -99,9 +101,9 @@ def Inp_Split(Directory,Inp_origin_file_path):
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
                     InpFile_New.write("*include,input=Ele_%s.inp\n"%elset_Name)
-                    if 'Grain_boundaries' in elset_Name:
-                        # If there is a element set named Grain_boundaries, creat a set named Grain_interior
-                        InpFile_New.write("*Elset, elset=Ele_Grain_interior\n*include,input=Ele_Grain_interior.inp\n")
+                    if 'grain_boundaries' in elset_Name:
+                        # If there is a element set named grain_boundaries, creat a set named grain_interior
+                        InpFile_New.write("*Elset, elset=Ele_grain_interior\n*include,input=Ele_grain_interior.inp\n")
                     break
                 else:
                     # Writing the element number into the new .inp file
@@ -109,7 +111,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
                     InpFile_origin_lines.remove(subline)
                     # Reading the element number corresponding to the grain boundaries
                     # The list Ele_num_Grain_boundaries will be used in the later
-                    if 'Grain_boundaries' in elset_Name:
+                    if 'grain_boundaries' in elset_Name:
                         subline_split = subline.split(',')
                         for Ele_num in subline_split:
                             # Remove the '\n' in the end of the element number
@@ -118,7 +120,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
                             Ele_num_Grain_boundaries.append(int(Ele_num))
             elsetFile.close()
         # *******************************************************
-        if '*Nset' in line:
+        if '*nset' in line:
             # Writing the ***.inp file (*** is the name of nset)
             nset_Name_temp = line.split('nset=')[1]
             if 'generate' in nset_Name_temp:
@@ -141,9 +143,9 @@ def Inp_Split(Directory,Inp_origin_file_path):
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
                     InpFile_New.write("*include,input=Nset_%s.inp\n"%nset_Name)
-                    if 'Grain_boundaries' in nset_Name:
+                    if 'grain_boundaries' in nset_Name:
                         # If there is a element set named Grain_boundaries, creat a set named Grain_interior
-                        InpFile_New.write("*Nset, nset=Nset_Grain_interior\n*include,input=Nset_Grain_interior.inp\n")
+                        InpFile_New.write("*Nset, nset=Nset_grain_interior\n*include,input=Nset_grain_interior.inp\n")
                     break
                 else:
                     # Writing the node number
@@ -151,7 +153,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
                     InpFile_origin_lines.remove(subline)
                     # Reading the node number corresponding to the grain boundaries
                     # The list Node_num_Grain_boundaries will be used in the later
-                    if 'Grain_boundaries' in nset_Name:
+                    if 'grain_boundaries' in nset_Name:
                         subline_split = subline.split(',')
                         for Node_num in subline_split:
                             # Remove the '\n' in the end of the element number
@@ -169,7 +171,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
     Ele_num_Grain_interior = Ele_num_Total - Ele_num_Grain_boundaries
     # print(Ele_num_Grain_boundaries)
     # os._exit(0)
-    elset_Name = 'Grain_interior'
+    elset_Name = 'grain_interior'
     elsetFile_path = "Ele_%s.inp"%elset_Name
     elsetFile = open(elsetFile_path,'w')
     for Ele_num in Ele_num_Grain_interior:
@@ -184,7 +186,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
     Node_num_Grain_interior = Node_num_Total - Node_num_Grain_boundaries
     # print(Node_num_Grain_boundaries)
     # os._exit(0)
-    nset_Name = 'Grain_interior'
+    nset_Name = 'grain_interior'
     nsetFile_path = "Nset_%s.inp"%nset_Name
     nsetFile = open(nsetFile_path,'w')
     for Node_num in Node_num_Grain_interior:
