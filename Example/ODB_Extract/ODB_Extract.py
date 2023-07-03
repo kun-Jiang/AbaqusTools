@@ -48,6 +48,7 @@ class Get_field_output():
             # The third column is the value in the second intergration point
             # The fourth column is the value in the third intergration point
             # The fifth column is the value in the fourth intergration point
+            # ......
             field = np.zeros((len(self.field_output_values)/4, self.field_vector_length))
         if 'S' in self.output_option:
             field = np.zeros((len(self.field_output_values),self.field_vector_length))
@@ -65,7 +66,7 @@ class Get_field_output():
             # prettyprint(field_value)
             if count == 0:
                 # As usual, the number of the first element is 1, 
-                # if the number of the first element is not 1, there is a offset
+                # if the number of the first element is not 1, there is maybe a offset
                 if field_value.elementLabel != None:
                     # Some field outputs are defined on the node, so there isn't element label
                     element_offset = field_value.elementLabel -1
@@ -173,11 +174,12 @@ class output_field_process():
         return EVOL_Total
     
     def get_uvarm_value(self):
-        field_array = Get_field_output(self.frame, self.output_option, field_vector_length=5).get_values_array()
+        field_array = Get_field_output(self.frame, self.output_option, field_vector_length=9).get_values_array()
         UVARM = field_array[:,1:]
         [ rows_num, columns_num] = np.shape(UVARM)
         UVARM_Element_Weighted = np.zeros([rows_num,1])
-        intergration_point_Weight = [1./4,1./4,1./4,1./4]
+        intergration_point_Weight = [1 for i in range(field_vector_length-1)]
+
         for column in range(columns_num):
             # Summarize the UVARM of every integration point in element by the intergration point weight
             UVARM_Element_Weighted = UVARM[:,column]*intergration_point_Weight[column] + UVARM_Element_Weighted
@@ -281,8 +283,8 @@ if __name__ == '__main__':
     #           If you want to extract the data in a specified step, please set the relative sequence number of the step
     #           Example: specified_step = 1 means the first step
     #                    specified_step = None(default) means all steps
-    odb_file_name = 'Model_Chem.odb'
-    output_option = 'S'
+    odb_file_name = 'Mod_MultiC.odb'
+    output_option = 'UVARM3'
     output_suboption = None
     specified_step = 1
     # *********************************************************************************************************************
@@ -328,7 +330,7 @@ if __name__ == '__main__':
         if 'SDV' in output_option:
             field_vector_length = 2
         if 'UVARM' in output_option:
-            field_vector_length = 5
+            field_vector_length = 9
         if 'U' in output_option:
             # 识别别是二维单元还是三维单元，二维单元只有两个分量，三维单元有三个分量，将这些结果都输出一下
             field_vector_length = 2

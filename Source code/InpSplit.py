@@ -1,9 +1,10 @@
 import os
+import shutil
 import argparse
 
 
-def Inp_Split(Directory,Inp_origin_file_path):
-    os.chdir(Directory)
+def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
+    os.chdir(Inp_Split_folder)
     InpFile_Name     = InpFile.split('.inp')[0]
     print('Input file name : %s.inp'%InpFile_Name)
     # *******************************************************
@@ -11,7 +12,9 @@ def Inp_Split(Directory,Inp_origin_file_path):
     InpFile_origin_lines    = InpFile_origin.readlines()
     InpFile_origin.close()
     # Rewrite the Inp file
-    InpFile_New = open("%s_Split.inp"%InpFile_Name,'w')
+    InpFile_New_name = "%s-Split.inp"%InpFile_Name
+    InpFile_New_path = os.path.join(Inp_Split_folder,InpFile_New_name)
+    InpFile_New = open(InpFile_New_path,'w')
     print('Output file name: %s-Split.inp'%InpFile_Name)
     Node_num_Total = []
     Ele_num_Total = []
@@ -20,21 +23,28 @@ def Inp_Split(Directory,Inp_origin_file_path):
     # *******************************************************
     print("{:-^80}".format('Running log'))
     iter_num = 0
+    Inp_set_count = 0
     while len(InpFile_origin_lines) > 0:
         iter_num += 1
         line = InpFile_origin_lines[0]
         InpFile_origin_lines.remove(line)
         InpFile_New.write(line)
         line = line.lower()
+        if '**' in line:
+            # If there is a '**' in line, indicating that this line is a comment
+            continue
         # *******************************************************
         if '*node' in line:
+            if 'output' in line:
+                continue
             # Writing the Node.inp file
-            NodeFile    = open("Node.inp",'w')
+            Inp_set_count += 1
+            NodeFile    = open("Node_%s.inp"%Inp_set_count,'w')
             temp_lines = list(InpFile_origin_lines)
             for subline in temp_lines:
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
-                    InpFile_New.write("*include,input=Node.inp\n")
+                    InpFile_New.write("*include,input=Model\\Node_%s.inp\n"%Inp_set_count)
                     break
                 else:
                     # Writing the node and coordinates
@@ -48,7 +58,9 @@ def Inp_Split(Directory,Inp_origin_file_path):
             NodeFile.close()
             continue
         # *******************************************************
-        if 'element' in line:
+        if '*element' in line:
+            if 'output' in line:
+                continue
             # There must be a elset after the elements define (For example: *Element, type=***, elset=***)
             # Writing the ***.inp file which define the element(*** is the name of elset)
             if 'elset' in line:
@@ -65,7 +77,7 @@ def Inp_Split(Directory,Inp_origin_file_path):
             for subline in temp_lines:
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
-                    InpFile_New.write("*include,input=Element_%s.inp\n"%elset_Name)
+                    InpFile_New.write("*include,input=Model\\Element_%s.inp\n"%elset_Name)
                     break
                 else:
                     # Writing the element number and nodes
@@ -100,10 +112,10 @@ def Inp_Split(Directory,Inp_origin_file_path):
             for subline in temp_lines:
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
-                    InpFile_New.write("*include,input=Ele_%s.inp\n"%elset_Name)
+                    InpFile_New.write("*include,input=Model\\Ele_%s.inp\n"%elset_Name)
                     if 'grain_boundaries' in elset_Name:
                         # If there is a element set named grain_boundaries, creat a set named grain_interior
-                        InpFile_New.write("*Elset, elset=Ele_grain_interior\n*include,input=Ele_grain_interior.inp\n")
+                        InpFile_New.write("*Elset, elset=Ele_grain_interior\n*include,input=Model\\Ele_grain_interior.inp\n")
                     break
                 else:
                     # Writing the element number into the new .inp file
@@ -142,10 +154,10 @@ def Inp_Split(Directory,Inp_origin_file_path):
             for subline in temp_lines:
                 if '*' in subline:
                     # If there is a '*' in subline, this section is finished
-                    InpFile_New.write("*include,input=Nset_%s.inp\n"%nset_Name)
+                    InpFile_New.write("*include,input=Model\\Nset_%s.inp\n"%nset_Name)
                     if 'grain_boundaries' in nset_Name:
                         # If there is a element set named Grain_boundaries, creat a set named Grain_interior
-                        InpFile_New.write("*Nset, nset=Nset_grain_interior\n*include,input=Nset_grain_interior.inp\n")
+                        InpFile_New.write("*Nset, nset=Nset_grain_interior\n*include,input=Model\\Nset_grain_interior.inp\n")
                     break
                 else:
                     # Writing the node number
@@ -194,7 +206,14 @@ def Inp_Split(Directory,Inp_origin_file_path):
     nsetFile.close()
     # *******************************************************
     InpFile_New.close()
-
+    # *******************************************************
+    # Move the new.inp file to the working directory
+    os.chdir(Directory)
+    InpFile_split_old = os.path.join(Directory,InpFile_New_name)
+    if os.path.exists(InpFile_split_old):
+        os.remove(InpFile_split_old)
+    shutil.move(InpFile_New_path,Directory)
+    
 
 
 
@@ -217,12 +236,12 @@ if __name__ == '__main__':
     #      Directory = 'D:/Desktop', InpFile = 'xx.inp'
     [Directory,InpFile] = os.path.split(Inp_origin_file_path)
     # Create the folder to store the split inp file
-    Inp_Split_folder = os.path.join(Directory,'Inp_Split')
+    Inp_Split_folder = os.path.join(Directory,'Model')
     if os.path.exists(Inp_Split_folder) == False:
         os.mkdir(Inp_Split_folder)
     # *******************************************************
     #               Split the inp file
     # *******************************************************
-    Inp_Split(Inp_Split_folder,Inp_origin_file_path)
+    Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory)
     print("{0:=^80}".format("Finished") + '\n')
     

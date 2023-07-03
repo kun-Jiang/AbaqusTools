@@ -286,39 +286,64 @@ class create_Ele_num_offset_gui():
     
     def browse_Offset_file(self):
         # 打开文件对话框
-        file_path = filedialog.askopenfilename(filetypes=[("Inp files", "*.inp"), ("All files", "*.*")])
-
+        file_path = filedialog.askopenfilenames(filetypes=[("Inp files", "*.inp"), ("All files", "*.*")])
         # 将选择的文件路径显示在输入框中
         self.Offset_origin_file_entry.delete(0, tk.END)
-        self.Offset_origin_file_entry.insert(0, file_path)
+        self.Offset_origin_file_entry.insert(0, list(file_path))
 
     def run_Ele_num_offset(self):
         # Get file path from input box
-        Offset_file_path = self.Offset_origin_file_entry.get()
+        Offset_files_path = self.Offset_origin_file_entry.get()
+        Offset_files_path_list = Offset_files_path.split(' ')
+        print(Offset_files_path_list)
         # Get the magnitude of offset
         Offset_Magnitude = self.Offset_Magnitude_entry.get()
-        if Offset_file_path == None:
+        if Offset_files_path == None:
             tk.messagebox.showerror("错误", "找不到Inp文件！")
             return
-        [Offset_file_folder, Offset_file]= os.path.split(Offset_file_path)        
-        # *******************************************************************************************
-        # Writing layer information into a txt file, which will be read by EleNum_Offset.py
-        layer_info = [[self.First_layer_input_entry.get(),  self.First_layer_multiplier_entry.get()],
-                      [self.Second_layer_input_entry.get(), self.Second_layer_multiplier_entry.get()],
-                      [self.Third_layer_input_entry.get(),  self.Third_layer_multiplier_entry.get()],
-                      [self.Fourth_layer_input_entry.get(), self.Fourth_layer_multiplier_entry.get()]]
-        layer_info_file_path = os.path.join(Offset_file_folder,'layer_info.txt')
-        with open(layer_info_file_path, 'w') as layer_info_file:
-            for layer in layer_info:
-                # layer[0] is the layer number, layer[1] is the multiplier
-                layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
-        # *******************************************************************************************
-        EleNum_Offset_py_file_path = os.path.join(working_directory,'Source code\EleNum_Offset.py')
-        # Execute EleNum_Offset.py
-        try:
-            subprocess.call(['python', EleNum_Offset_py_file_path, '-w '+Offset_file_path, '-m '+Offset_Magnitude])
-        except FileNotFoundError:
-            tk.messagebox.showerror("错误", "找不到Inp文件或Python执行文件！")
+        elif len(Offset_files_path_list) == 1:
+            Offset_file_path = Offset_files_path_list[0]
+            [Offset_file_folder, Offset_file]= os.path.split(Offset_file_path)        
+            # *******************************************************************************************
+            # Writing layer information into a txt file, which will be read by EleNum_Offset.py
+            layer_info = [[self.First_layer_input_entry.get(),  self.First_layer_multiplier_entry.get()],
+                        [self.Second_layer_input_entry.get(), self.Second_layer_multiplier_entry.get()],
+                        [self.Third_layer_input_entry.get(),  self.Third_layer_multiplier_entry.get()],
+                        [self.Fourth_layer_input_entry.get(), self.Fourth_layer_multiplier_entry.get()]]
+            layer_info_file_path = os.path.join(Offset_file_folder,'layer_info.txt')
+            with open(layer_info_file_path, 'w') as layer_info_file:
+                for layer in layer_info:
+                    # layer[0] is the layer number, layer[1] is the multiplier
+                    layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
+            # *******************************************************************************************
+            EleNum_Offset_py_file_path = os.path.join(working_directory,'Source code\EleNum_Offset.py')
+            # Execute EleNum_Offset.py
+            try:
+                subprocess.call(['python', EleNum_Offset_py_file_path, '-w '+Offset_file_path, '-m '+Offset_Magnitude])
+            except FileNotFoundError:
+                tk.messagebox.showerror("错误", "找不到Inp文件或Python执行文件！")
+        elif len(Offset_files_path_list) > 1:
+            print('There are more than one inp files')
+            for Offset_file_path in Offset_files_path_list:
+                [Offset_file_folder, Offset_file]= os.path.split(Offset_file_path)
+                # *******************************************************************************************
+                # Writing layer information into a txt file, which will be read by EleNum_Offset.py
+                layer_info = [[self.First_layer_input_entry.get(),  self.First_layer_multiplier_entry.get()],
+                            [self.Second_layer_input_entry.get(), self.Second_layer_multiplier_entry.get()],
+                            [self.Third_layer_input_entry.get(),  self.Third_layer_multiplier_entry.get()],
+                            [self.Fourth_layer_input_entry.get(), self.Fourth_layer_multiplier_entry.get()]]
+                layer_info_file_path = os.path.join(Offset_file_folder,'layer_info.txt')
+                with open(layer_info_file_path, 'w') as layer_info_file:
+                    for layer in layer_info:
+                        # layer[0] is the layer number, layer[1] is the multiplier
+                        layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
+                # *******************************************************************************************
+                EleNum_Offset_py_file_path = os.path.join(working_directory,'Source code\EleNum_Offset.py')
+                # Execute EleNum_Offset.py
+                try:
+                    subprocess.call(['python', EleNum_Offset_py_file_path, '-w '+Offset_file_path, '-m '+Offset_Magnitude])
+                except FileNotFoundError:
+                    tk.messagebox.showerror("错误", "找不到Inp文件或Python执行文件！")                
 
 class create_odb_extract_gui():
     def __init__(self, parent):

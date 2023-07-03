@@ -282,7 +282,7 @@ if __name__ == '__main__':
     #           Example: specified_step = 1 means the first step
     #                    specified_step = None(default) means all steps
     odb_file_name = 'Model_Chem.odb'
-    output_option = 'S'
+    output_option = 'UVAMR2'
     output_suboption = None
     specified_step = 1
     # *********************************************************************************************************************

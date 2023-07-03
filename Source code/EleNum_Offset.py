@@ -12,14 +12,11 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
     InpFile_prefix   = InpFile_Name.split('_')[0]
     # suffix = 'Grain', 'broundraies'
     InpFile_suffix_temp   = InpFile_Name.split('_')[1:]
-    for i in range(len(InpFile_suffix_temp)):
-        if i == 0:
-            InpFile_suffix = InpFile_suffix_temp[i]
-        else:
-            # There are usually more than one suffix in the element set name, so 
-            # we need to add '_' to connect them.
-            # E.g. 'Eleset_Grain_broundraies'
-            InpFile_suffix = InpFile_suffix + '_' + InpFile_suffix_temp[i]
+    # There are usually more than one suffix in the element set name, so 
+    # we need to add '_' to connect them.
+    # E.g. 'Eleset_Grain_broundraies'
+    InpFile_suffix = '_'.join(InpFile_suffix_temp)
+
     # ***************************************************************************
     # Offset_mode: The parameter to define the mode of identify
     #    Offset_mode = 1 : the file just contains elements number
@@ -76,13 +73,17 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
         # so every elemnts in line should be offseted.
             with open("%s.inp"%layer_file_name,'w') as InpFile:
                 for Real_line in Inp_Origin_lines:
+                    Real_line = Real_line.strip('\n')
                     offset_line = ''
                     # Spliting the single element label from the line
                     Eles = Real_line.split(',')
                     for EleNum_temp in Eles:
+                        if EleNum_temp == '':
+                            continue
                         # Adding the offset with the element label
                         EleNum = int(EleNum_temp) + EleNumOffset
                         if Eles.index(EleNum_temp) == 0:
+                            # For the first number, we don't need to add ',' to connect
                             offset_line = offset_line + str(EleNum)
                         else:
                             offset_line = offset_line + ',' + str(EleNum) 
@@ -90,12 +91,13 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
         elif Offset_mode == 2:
             with open("%s.inp"%layer_file_name,'w') as InpFile:
                 for Real_line in Inp_Origin_lines:
+                    Real_line = Real_line.strip('\n')
                     offset_line = ''
                     # Spliting the single element label from the line
                     EleNum_temp = Real_line.split(',')
                     EleNum = int(EleNum_temp[0]) + EleNumOffset
                     offset_line = str(EleNum) + ',' + EleNum_temp[1] + ',' + EleNum_temp[2] + ',' + EleNum_temp[3] + ',' + EleNum_temp[4]
-                    InpFile.write(offset_line)    
+                    InpFile.write(offset_line + '\n')    
             
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='The script of adding offset to the element number in the element set file.')
@@ -114,6 +116,7 @@ if __name__ == '__main__':
     # Remove the space before the string
     # E.g. Directory = ' D:/Desktop' --> 'D:/Desktop' 
     Eleset_origin_file_path = Eleset_origin_file_path.strip()
+    print('Input file path   : %s'%Eleset_origin_file_path)
     # ***************************************************************************
     # Split the file path into directory and file name
     # E.g. Offset_origin_file_path = 'D:/Desktop/xx.inp'

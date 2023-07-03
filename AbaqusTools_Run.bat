@@ -1,13 +1,13 @@
 @echo off
 setlocal
 
-rem 获取批处理脚本文件所在目录的路径
+rem Get the path of current folder
 set "SCRIPT_DIR=%~dp0"
 
-rem 在Python程序文件名前添加批处理脚本文件所在目录的路径
+rem Combine the folder path with python file's name
 set "PYTHON_FILE=%SCRIPT_DIR%AbaqusTools.py"
 
-rem 运行Python程序
+rem Run the python program
 python "%PYTHON_FILE%"
 
 endlocal

@@ -425,10 +425,18 @@ if __name__ == '__main__':
     # The program will extract the data in the every sub-folder
     # The directory structure is as follows:
     # Primary directory (working_directory)
-    #   |---sub-folder1
+    #   |---sub-folder1------------------------------------|
+    #       |---Calculation1.inp
     #       |---Calculation1.odb
-    #   |---sub-folder2
+    #       |---Extracted Results(Folder)------------------|
+    #           |---Calculation1-Time Curve.png
+    #           |---Calculation1-Time.csv
+    #   |---sub-folder2------------------------------------|
+    #       |---Calculation2.inp
     #       |---Calculation2.odb
+    #       |---Extracted Results(Folder)------------------|
+    #           |---Calculation2-Time Curve.png
+    #           |---Calculation2-Time.csv
     #   ...
     global sub_folder
     Calculation_folders = os.listdir(os.getcwd())
