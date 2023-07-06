@@ -1,6 +1,8 @@
 import os
 import argparse
 
+# *
+
 def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_folder, InpFile):
     os.chdir(EleNum_Offset_folder)
     # ***************************************************************************
@@ -77,16 +79,14 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
                     offset_line = ''
                     # Spliting the single element label from the line
                     Eles = Real_line.split(',')
+                    EleNum_list = []
                     for EleNum_temp in Eles:
                         if EleNum_temp == '':
                             continue
-                        # Adding the offset with the element label
+                        # Adding the offset on every element labels
                         EleNum = int(EleNum_temp) + EleNumOffset
-                        if Eles.index(EleNum_temp) == 0:
-                            # For the first number, we don't need to add ',' to connect
-                            offset_line = offset_line + str(EleNum)
-                        else:
-                            offset_line = offset_line + ',' + str(EleNum) 
+                        EleNum_list.append(str(EleNum))
+                    offset_line = ','.join(EleNum_list)
                     InpFile.write(offset_line + '\n')
         elif Offset_mode == 2:
             with open("%s.inp"%layer_file_name,'w') as InpFile:
@@ -95,8 +95,10 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
                     offset_line = ''
                     # Spliting the single element label from the line
                     EleNum_temp = Real_line.split(',')
+                    # Solely adding the offset on the element label
                     EleNum = int(EleNum_temp[0]) + EleNumOffset
-                    offset_line = str(EleNum) + ',' + EleNum_temp[1] + ',' + EleNum_temp[2] + ',' + EleNum_temp[3] + ',' + EleNum_temp[4]
+                    # Merge the element label and node label
+                    offset_line = str(EleNum) + ',' + ','.join(EleNum_temp[1:])
                     InpFile.write(offset_line + '\n')    
             
 if __name__ == '__main__':
