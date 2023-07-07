@@ -1,9 +1,0 @@
-**********************************************************************
-*                      Extracting Data from ODB                      *
-**********************************************************************
-ODB file name            :Model_Chem.odb
-Output field parameter   :U
-------------------------------------------------------------
-Open the ODB file successfully
-Extract the data from every frame...
-Plot the curve
