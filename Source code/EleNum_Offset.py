@@ -64,7 +64,7 @@ def EleNum_Offset(Offset_origin_file_folder, Offset_Magnitude, EleNum_Offset_fol
         layer_multiplier = layer[1]
         EleNumOffset     = Offset_Magnitude*layer_multiplier
         if Offset_mode == 1:
-            layer_file_name  = '%s_%s_%s'%(InpFile_prefix,layer_name,InpFile_suffix)
+            layer_file_name  = '%s_%s_%s'%(InpFile_prefix,InpFile_suffix,layer_name)
         elif Offset_mode == 2:
             layer_file_name = '%s_%s'%(InpFile_prefix,layer_name)
         print("{0:^40}{1:^15}".format(layer_file_name,layer_multiplier))

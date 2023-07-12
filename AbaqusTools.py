@@ -222,13 +222,13 @@ class create_Ele_num_offset_gui():
         # Creating the second layer input
         self.Second_layer_label = ttk.Label(self.tab_Ele_num_offset, text="Second layer")
         self.Second_layer_input_entry = ttk.Entry(self.tab_Ele_num_offset, width=40)
-        self.Second_layer_input_entry.insert(tk.END, "Mass")
+        self.Second_layer_input_entry.insert(tk.END, "Chem")
         self.Second_layer_multiplier_entry = ttk.Entry(self.tab_Ele_num_offset, width=10, justify='center')
         self.Second_layer_multiplier_entry.insert(tk.END, "1")
         # Creating the third layer input
         self.Third_layer_label = ttk.Label(self.tab_Ele_num_offset, text="Third layer")
         self.Third_layer_input_entry = ttk.Entry(self.tab_Ele_num_offset, width=40)
-        self.Third_layer_input_entry.insert(tk.END, "Frac")
+        self.Third_layer_input_entry.insert(tk.END, "Phase")
         self.Third_layer_multiplier_entry = ttk.Entry(self.tab_Ele_num_offset, width=10, justify='center')
         self.Third_layer_multiplier_entry.insert(tk.END, "2")
         # Creating the fourth layer input
