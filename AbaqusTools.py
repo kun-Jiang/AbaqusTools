@@ -253,9 +253,9 @@ class create_Ele_num_offset_gui():
         #                        Layout the text input box                        #
         # *********************************************************************** #
         # Get input file
-        self.Offset_origin_file_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.Offset_origin_file_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-        self.Button_browse_offset.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        self.Offset_origin_file_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.N)
+        self.Offset_origin_file_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.N)
+        self.Button_browse_offset.grid(row=0, column=2, padx=5, pady=5, sticky=tk.N)
         # Table head
         self.Offset_layer_name.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N)
         self.Offset_file_name.grid(row=1, column=1, padx=5, pady=5, sticky=tk.N)
@@ -352,21 +352,57 @@ class create_odb_extract_gui():
         self.odb_extract_file_label = ttk.Label(self.tab_odb_extract, text="ODB file path")
         self.odb_extract_file_entry = ttk.Entry(self.tab_odb_extract, width=40)
         self.button_select_odb_file = ttk.Button(self.tab_odb_extract, text="Select", 
-                                            command=self.browse_odb_file)
-        # Set the keywords of the field output variables
-        self.odb_extract_keyword_label = ttk.Label(self.tab_odb_extract, text="Keyword:")
-        self.odb_extract_keyword_entry = ttk.Entry(self.tab_odb_extract, width=40)
-        
+                                            command=self.browse_odb_file)        
+        # Create a combobox for displaying available output options
+        self.Output_options_label = ttk.Label(self.tab_odb_extract, text="Output options:")
+        self.Output_options_combobox = ttk.Combobox(self.tab_odb_extract, width=10)
+        self.Output_options_combobox['values'] = ('S','U','EVOL','UVARM','SDV')
+        self.Output_suboptions_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
+        self.Output_suboptions_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        # Get necessary information for odb extract
+        #---------------------------------Dimension---------------------------------#
+        self.Dimension_label = ttk.Label(self.tab_odb_extract, text="Dimension:")
+        self.Dimension_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Dimension_entry.insert(tk.END, "2")
+        #-----------------------------------step------------------------------------#
+        self.Step_label = ttk.Label(self.tab_odb_extract, text="Step:")
+        self.Step_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Step_entry.insert(tk.END, "0")
+        self.Step_description_label = ttk.Label(self.tab_odb_extract, text="0: All step; -1: Last step")
+        #-----------------------------------frame-----------------------------------#
+        self.Frame_label = ttk.Label(self.tab_odb_extract, text="Frame:")
+        self.Frame_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Frame_entry.insert(tk.END, "0")
+        self.Frame_description_label = ttk.Label(self.tab_odb_extract, text="0: All frame; -1: Last frame")
+        # Creating the execute button
+        self.Odb_extract_button = ttk.Button(self.tab_odb_extract,text='Execute',
+                                              command=lambda: Run_in_new_thread(self.execute_odb_extract))
         # *********************************************************************** #
         # Layout the GUI
         # *********************************************************************** #
         # Get odb file
         self.odb_extract_file_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.odb_extract_file_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-        self.button_select_odb_file.grid(row=0, column=2, padx=5, pady=5)
-        # Get output field keyword
-        self.odb_extract_keyword_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.odb_extract_keyword_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        self.odb_extract_file_entry.grid(row=0, column=1, columnspan=3, padx=5, pady=5, sticky=tk.W)
+        self.button_select_odb_file.grid(row=0, column=4, padx=5, pady=5, sticky=tk.W)
+        # Get output options
+        self.Output_options_label.grid(row=1, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Output_options_combobox.grid(row=1, column=1, padx=5, pady=5,   sticky=tk.W)
+        self.Output_suboptions_label.grid(row=1, column=2, padx=5, pady=5,   sticky=tk.W)
+        self.Output_suboptions_entry.grid(row=1, column=3, padx=5, pady=5,   sticky=tk.W)
+        # Get necessary information for odb extract
+        # Dimension
+        self.Dimension_label.grid(row=2, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Dimension_entry.grid(row=2, column=1, padx=5, pady=5,   sticky=tk.W)
+        # Step
+        self.Step_label.grid(row=3, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Step_entry.grid(row=3, column=1, padx=5, pady=5,   sticky=tk.W)
+        self.Step_description_label.grid(row=3, column=2, columnspan=4, padx=5, pady=5,  sticky=tk.W)
+        # Frame
+        self.Frame_label.grid(row=4, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Frame_entry.grid(row=4, column=1, padx=5, pady=5,   sticky=tk.W)
+        self.Frame_description_label.grid(row=4, column=2, columnspan=4, padx=5, pady=5,  sticky=tk.W)
+        # Execution button
+        self.Odb_extract_button.grid(row=5, column=2, padx=5, pady=5,   sticky=tk.W)
         # # Create a combobox for displaying inp files
         # self.odb_file_label = ttk.Label(self.tab_odb_extract, text="Select odb file:")
         # self.odb_file_combobox = ttk.Combobox(self.tab_odb_extract, width=37)
@@ -377,11 +413,37 @@ class create_odb_extract_gui():
         # 将选择的文件路径显示在输入框中
         self.odb_extract_file_entry.delete(0, tk.END)
         self.odb_extract_file_entry.insert(0, file_path)
-        
+            
     def execute_odb_extract(self):
         odb_file_path = self.odb_extract_file_entry.get()
-        output_option = self.odb_extract_keyword_entry.get()
+        output_option = self.Output_options_combobox.get()
+        output_suboption = self.Output_suboptions_entry.get()
+        dimension = self.Dimension_entry.get()
+        specified_step = self.Step_entry.get()
+        specified_frame = self.Frame_entry.get()
+        if odb_file_path == None:
+            tk.messagebox.showerror("Error", "Please select an file")
+            return
+        else:
+            odb_extract_py_file_path = os.path.join(working_directory,'Source code\Function_ODB_Extract.py')
+            script_path = odb_extract_py_file_path
+            abaqus_command_line = ['D:/ABAQUS/2021/Commands/abaqus.bat','python', script_path,
+                                   '-f',  odb_file_path,
+                                   '-o',  output_option,
+                                   '-so', output_suboption,
+                                   '-d',  dimension,
+                                   '-s',  specified_step,
+                                   '-r',  specified_frame]
+            
+            try:
+                subprocess.call(abaqus_command_line)
+                # subprocess.call(['D:/ABAQUS/Commands/abaqus.bat', 'job='+input_file, 'user='+for_file,
+                #                  'scratch="D:/ABAQUS/temp/CMD_Temp"', 'int', 'ask=off'])
+            except FileNotFoundError:
+                tk.messagebox.showerror("Error", "Execute command line failed")
+                print(abaqus_command_line)
         
+        pass
     # def update_combobox(self):
         # Display all field output variables in the combobox
         # Get the keywoards of the field output variables
