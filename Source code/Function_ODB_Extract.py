@@ -52,6 +52,7 @@ class Get_field_output():
             # Values of EVOL are stored in the element, so the length of the array is the number of elements
             # The first column is the element label
             # The second column is the value of scale field
+            print(len(self.field_output_values))
             field = np.zeros((len(self.field_output_values),self.field_vector_length))
         if 'UVARM' in self.output_option or 'SDV' in self.output_option:
             # Values of UVARM and SDV are stored in the intergration points, 
@@ -184,6 +185,14 @@ class output_field_access():
         field_array = Get_field_output(self.frame, 'EVOL', field_vector_length=2).get_values_array()
         # Get the column that contains element volume and calculate the total volume
         EVOL_Individual = field_array[:,1]
+        EVOL_file_path = os.path.join(extracted_data_folder,'Element_Volume.txt')
+        with open(EVOL_file_path,'w') as EVOL_file:
+            EVOL_file.write('Element number'+'\t'+'Element volume'+'\n')
+            for i in range(len(EVOL_Individual)):
+                EVOL_file.write(str(int(field_array[i,0]))+'\t'+str(field_array[i,1])+'\n')
+            
+        #     for i in range(len(EVOL_Individual)):
+        #         f.write(str(EVOL_Individual[i])+'\n')
         EVOL_Total = np.sum(EVOL_Individual)
         return EVOL_Total
     
