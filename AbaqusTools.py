@@ -129,7 +129,7 @@ class create_cmd_gui():
         check_ask       = self.check_ask_value.get()
 
         os.chdir(CMD_working_directory)
-        abaqus_bat_path = 'D:/ABAQUS/2021/Commands/abaqus.bat'
+        abaqus_bat_path = 'D:/ABAQUS/Commands/abaqus.bat'
         abaqus_job      = 'job='+CMD_inp_file_name
         abaqus_user     = 'user='+CMD_for_file_name
         abaqus_scratch_path = 'scratch='+scratch_path
@@ -159,8 +159,8 @@ class create_cmd_gui():
             # subprocess.call(['D:/ABAQUS/Commands/abaqus.bat', 'job='+input_file, 'user='+for_file,
             #                  'scratch="D:/ABAQUS/temp/CMD_Temp"', 'int', 'ask=off'])
         except FileNotFoundError:
-            tk.messagebox.showerror("错误", "找不到ABAQUS执行文件！")
-
+            tk.messagebox.showerror("Error", "Execute command line failed. Please check the path of the abaqus.bat file and modify it in AbaqusTools.py")
+            print(abaqus_command_line)
 class create_InpSplit_gui():
     def __init__(self, parent):
         self.tab_InpSplit = parent
@@ -182,7 +182,7 @@ class create_InpSplit_gui():
     def run_InpSplit(self):
         # 从输入框中获取文件路径
         input_file_path = self.entry_InpSplit.get()
-        InpSplit_py_file_path = os.path.join(working_directory,'Source code\InpSplit.py')
+        InpSplit_py_file_path = os.path.join(working_directory,'src\InpSplit.py')
         # 执行InpSplit.py
         try:
             subprocess.call(['python', InpSplit_py_file_path, '-w '+input_file_path])
@@ -316,7 +316,7 @@ class create_Ele_num_offset_gui():
                     # layer[0] is the layer number, layer[1] is the multiplier
                     layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
             # *******************************************************************************************
-            EleNum_Offset_py_file_path = os.path.join(working_directory,'Source code\EleNum_Offset.py')
+            EleNum_Offset_py_file_path = os.path.join(working_directory,'src\EleNum_Offset.py')
             # Execute EleNum_Offset.py
             try:
                 subprocess.call(['python', EleNum_Offset_py_file_path, '-w '+Offset_file_path, '-m '+Offset_Magnitude])
@@ -338,7 +338,7 @@ class create_Ele_num_offset_gui():
                         # layer[0] is the layer number, layer[1] is the multiplier
                         layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
                 # *******************************************************************************************
-                EleNum_Offset_py_file_path = os.path.join(working_directory,'Source code\EleNum_Offset.py')
+                EleNum_Offset_py_file_path = os.path.join(working_directory,'src\EleNum_Offset.py')
                 # Execute EleNum_Offset.py
                 try:
                     subprocess.call(['python', EleNum_Offset_py_file_path, '-w '+Offset_file_path, '-m '+Offset_Magnitude])
@@ -356,7 +356,7 @@ class create_odb_extract_gui():
         # Create a combobox for displaying available output options
         self.Output_options_label = ttk.Label(self.tab_odb_extract, text="Output options:")
         self.Output_options_combobox = ttk.Combobox(self.tab_odb_extract, width=10)
-        self.Output_options_combobox['values'] = ('S','U','EVOL','UVARM','SDV')
+        self.Output_options_combobox['values'] = ('S','U','LE','EVOL','UVARM','SDV')
         self.Output_suboptions_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
         self.Output_suboptions_entry = ttk.Entry(self.tab_odb_extract, width=10)
         # Get necessary information for odb extract
@@ -367,13 +367,29 @@ class create_odb_extract_gui():
         #-----------------------------------step------------------------------------#
         self.Step_label = ttk.Label(self.tab_odb_extract, text="Step:")
         self.Step_entry = ttk.Entry(self.tab_odb_extract, width=10)
-        self.Step_entry.insert(tk.END, "0")
+        self.Step_entry.insert(tk.END, "-1")
         self.Step_description_label = ttk.Label(self.tab_odb_extract, text="0: All step; -1: Last step")
         #-----------------------------------frame-----------------------------------#
         self.Frame_label = ttk.Label(self.tab_odb_extract, text="Frame:")
         self.Frame_entry = ttk.Entry(self.tab_odb_extract, width=10)
         self.Frame_entry.insert(tk.END, "0")
         self.Frame_description_label = ttk.Label(self.tab_odb_extract, text="0: All frame; -1: Last frame")
+        #--------------------------------Dividing line------------------------------#
+        self.Dividing_line_label = ttk.Label(self.tab_odb_extract, text="-----------------------------------------------------------------------------------")
+        #-----------------------Parameters for figure output------------------------#
+        self.Figure_x_axis_min_label = ttk.Label(self.tab_odb_extract, text="X-min:")
+        self.Figure_x_axis_min_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Figure_x_axis_min_entry.insert(tk.END, "0")
+        self.Figure_x_axis_max_label = ttk.Label(self.tab_odb_extract, text="X-max:")
+        self.Figure_x_axis_max_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Figure_x_axis_max_entry.insert(tk.END, "0")
+        self.Figure_y_axis_min_label = ttk.Label(self.tab_odb_extract, text="Y-min:")
+        self.Figure_y_axis_min_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Figure_y_axis_min_entry.insert(tk.END, "0")
+        self.Figure_y_axis_max_label = ttk.Label(self.tab_odb_extract, text="Y-max:")
+        self.Figure_y_axis_max_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Figure_y_axis_max_entry.insert(tk.END, "0")
+        self.Figure_description_label = ttk.Label(self.tab_odb_extract, text="Don't input anything if you want to use the default value")
         # Creating the execute button
         self.Odb_extract_button = ttk.Button(self.tab_odb_extract,text='Execute',
                                               command=lambda: Run_in_new_thread(self.execute_odb_extract))
@@ -401,8 +417,20 @@ class create_odb_extract_gui():
         self.Frame_label.grid(row=4, column=0, padx=5, pady=5,   sticky=tk.W)
         self.Frame_entry.grid(row=4, column=1, padx=5, pady=5,   sticky=tk.W)
         self.Frame_description_label.grid(row=4, column=2, columnspan=4, padx=5, pady=5,  sticky=tk.W)
+        # Dividing line
+        self.Dividing_line_label.grid(row=5, column=0, columnspan=4, padx=5, pady=5,  sticky=tk.W)
+        # Parameters for figure output
+        self.Figure_x_axis_min_label.grid(row=6, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_x_axis_min_entry.grid(row=6, column=1, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_x_axis_max_label.grid(row=6, column=2, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_x_axis_max_entry.grid(row=6, column=3, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_y_axis_min_label.grid(row=7, column=0, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_y_axis_min_entry.grid(row=7, column=1, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_y_axis_max_label.grid(row=7, column=2, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_y_axis_max_entry.grid(row=7, column=3, padx=5, pady=5,   sticky=tk.W)
+        self.Figure_description_label.grid(row=8, column=0, columnspan=4, padx=5, pady=5,  sticky=tk.W)
         # Execution button
-        self.Odb_extract_button.grid(row=5, column=2, padx=5, pady=5,   sticky=tk.W)
+        self.Odb_extract_button.grid(row=9, column=2, padx=5, pady=5,   sticky=tk.W)
         # # Create a combobox for displaying inp files
         # self.odb_file_label = ttk.Label(self.tab_odb_extract, text="Select odb file:")
         # self.odb_file_combobox = ttk.Combobox(self.tab_odb_extract, width=37)
@@ -421,26 +449,34 @@ class create_odb_extract_gui():
         dimension = self.Dimension_entry.get()
         specified_step = self.Step_entry.get()
         specified_frame = self.Frame_entry.get()
+        x_axis_min = self.Figure_x_axis_min_entry.get()
+        x_axis_max = self.Figure_x_axis_max_entry.get()
+        y_axis_min = self.Figure_y_axis_min_entry.get()
+        y_axis_max = self.Figure_y_axis_max_entry.get()
         if odb_file_path == None:
             tk.messagebox.showerror("Error", "Please select an file")
             return
         else:
-            odb_extract_py_file_path = os.path.join(working_directory,'Source code\Function_ODB_Extract.py')
+            odb_extract_py_file_path = os.path.join(working_directory,'src\Function_ODB_Extract.py')
             script_path = odb_extract_py_file_path
-            abaqus_command_line = ['D:/ABAQUS/2021/Commands/abaqus.bat','python', script_path,
+            abaqus_command_line = ['D:/ABAQUS/Commands/abaqus.bat','python', script_path,
                                    '-f',  odb_file_path,
                                    '-o',  output_option,
                                    '-so', output_suboption,
                                    '-d',  dimension,
                                    '-s',  specified_step,
-                                   '-r',  specified_frame]
+                                   '-r',  specified_frame,
+                                   '-x1', x_axis_min,
+                                   '-x2', x_axis_max,
+                                   '-y1', y_axis_min,
+                                   '-y2', y_axis_max]
             
             try:
                 subprocess.call(abaqus_command_line)
                 # subprocess.call(['D:/ABAQUS/Commands/abaqus.bat', 'job='+input_file, 'user='+for_file,
                 #                  'scratch="D:/ABAQUS/temp/CMD_Temp"', 'int', 'ask=off'])
             except FileNotFoundError:
-                tk.messagebox.showerror("Error", "Execute command line failed")
+                tk.messagebox.showerror("Error", "Execute command line failed. Please check the path of the abaqus.bat file and modify it in AbaqusTools.py")
                 print(abaqus_command_line)
         
         pass
