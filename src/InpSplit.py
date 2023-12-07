@@ -30,15 +30,25 @@ def DataLineWrite(vector:list,elsetFile):
     """    
     # Convert elements of vector from int to str
     vector = list(map(str,vector))
-    for i in range(math.ceil(len(vector)/8)):
-        if i*8+8 <= len(vector):
-            templine = ','.join(vector[i*8:i*8+8])
-            elsetFile.write(templine+'\n')
-        elif i*8+8 > len(vector) and i*8 < len(vector):
-            templine = ','.join(vector[i*8:len(vector)])
-            elsetFile.write(templine+'\n')
+    Num = len(vector)
+    lines_num = math.ceil(Num / 16)
+    if lines_num == 1:
+        line = ','.join(vector)
+        elsetFile.write(line + '\n')
+    else:
+        for j in range(lines_num):
+            line = ', '.join(vector[(j*16):(j+1)*16])
+            elsetFile.write(line + '\n')
+
+    # for i in range(math.ceil(len(vector)/8)):
+    #     if i*8+8 <= len(vector):
+    #         templine = ','.join(vector[i*8:i*8+8])
+    #         elsetFile.write(templine+'\n')
+    #     elif i*8+8 > len(vector) and i*8 < len(vector):
+    #         templine = ','.join(vector[i*8:len(vector)])
+    #         elsetFile.write(templine+'\n')
             
-def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_boundaries:list)->list:
+def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_boundaries:list,Elset_name_list:list)->list:
     """Identify the element set in the .inp file and write the element number into the [Elset_Name].inp file
 
     Args:
@@ -46,7 +56,7 @@ def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_bou
         InpFile_origin_lines (str): _description_
         InpFile_New (_type_): _description_
         Ele_num_Grain_boundaries (list): The list contains all the element number of the grain boundaries
-
+        Elset_name_list (list): The list contains the name of all element number set
     Returns:
         Ele_num_Grain_boundaries (list): The list contains all the element number of the grain boundaries
     """    
@@ -56,7 +66,6 @@ def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_bou
         # *Elset, elset=***, generate
         elset_Name = elset_Name_temp.split(',')[0]
         elsetFile_path = "Ele_%s.inp"%elset_Name
-        elsetFile = open(elsetFile_path,'w')
         Sequence_line = InpFile_origin_lines[0]
         InpFile_origin_lines.remove(Sequence_line)
         # Generate the element number based on the sequence
@@ -67,8 +76,11 @@ def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_bou
         end   = int(Sequence_line.split(',')[1])
         inc   = int(Sequence_line.split(',')[2])
         Ele_num = Sequence_Generate(start,end,inc)
-        DataLineWrite(Ele_num,elsetFile)
-
+        with open(elsetFile_path,'w',encoding='utf-8') as elsetFile:
+            DataLineWrite(Ele_num,elsetFile)
+        InpFile_New.write("*include,input=Model\\Ele_%s.inp\n"%elset_Name)
+        Elset_name_list.append(elset_Name)
+        return
     elif ',' in elset_Name_temp:
         # *Elset, elset=***, instance=***\n
         elset_Name = elset_Name_temp.split(',')[0]
@@ -103,6 +115,7 @@ def Elset_access(line:str,InpFile_origin_lines:str,InpFile_New,Ele_num_Grain_bou
                         Ele_num = Ele_num.split('\n')[0]
                     Ele_num_Grain_boundaries.append(int(Ele_num))
     elsetFile.close()
+    Elset_name_list.append(elset_Name)
     return Ele_num_Grain_boundaries
     
 def Nset_access(line,InpFile_origin_lines,InpFile_New,Node_num_Grain_boundaries):
@@ -112,7 +125,6 @@ def Nset_access(line,InpFile_origin_lines,InpFile_New,Node_num_Grain_boundaries)
         # *Elset, elset=***, generate
         nset_Name = nset_Name_temp.split(',')[0]
         nsetFile_path = "Nset_%s.inp"%nset_Name
-        nsetFile = open(nsetFile_path,'w')
         Sequence_line = InpFile_origin_lines[0]
         InpFile_origin_lines.remove(Sequence_line)
         # Generate the node number based on the sequence
@@ -123,7 +135,10 @@ def Nset_access(line,InpFile_origin_lines,InpFile_New,Node_num_Grain_boundaries)
         end   = int(Sequence_line.split(',')[1])
         inc   = int(Sequence_line.split(',')[2])
         Node_num = Sequence_Generate(start,end,inc)
-        DataLineWrite(Node_num,nsetFile)
+        with open(nsetFile_path,'w') as nsetFile:
+            DataLineWrite(Node_num,nsetFile)
+        InpFile_New.write("*include,input=Model\\Nset_%s.inp\n"%nset_Name)
+        return
     elif ',' in nset_Name_temp:
         # *Nset, nset=***, instance=***\n
         nset_Name = nset_Name_temp.split(',')[0]
@@ -193,7 +208,6 @@ def GrainGB_Extract(Inp_Split_folder:str,Ele_num_Grain_boundaries:list,Node_num_
         #     os._exit(0)
         # Writing the list into file
         Grain_GB_file_path = os.path.join(Inp_Split_folder,file_name+'_GB.inp')
-        Grain_GB_file = open(Grain_GB_file_path,'w')
         with open(Grain_GB_file_path,'w') as Grain_GB_file:
             DataLineWrite(Ele_num_grain_GB,Grain_GB_file)
         # print(Ele_num_grain_GB)
@@ -202,14 +216,22 @@ def GrainGB_Extract(Inp_Split_folder:str,Ele_num_Grain_boundaries:list,Node_num_
         # os._exit(0)
     
 
-def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
+def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory,InpFile):
+    """_summary_
+
+    Args:
+        Inp_Split_folder (:str): Save the split file
+        
+        Inp_origin_file_path (:str): Path of the original model file
+        
+        Directory (:str): Working directory
+    """    
     os.chdir(Inp_Split_folder)
     InpFile_Name     = InpFile.split('.inp')[0]
     print('Input file name : %s.inp'%InpFile_Name)
     # *******************************************************
-    InpFile_origin      = open(Inp_origin_file_path,'r')
-    InpFile_origin_lines    = InpFile_origin.readlines()
-    InpFile_origin.close()
+    with open(Inp_origin_file_path,'r') as InpFile_origin:
+        InpFile_origin_lines = InpFile_origin.readlines()
     # Rewrite the Inp file
     InpFile_New_name = "%s-Split.inp"%InpFile_Name
     InpFile_New_path = os.path.join(Inp_Split_folder,InpFile_New_name)
@@ -217,6 +239,7 @@ def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
     print('Output file name: %s-Split.inp'%InpFile_Name)
     Node_num_Total = []
     Ele_num_Total = []
+    Elset_name_list = []
     Ele_num_Grain_boundaries = []
     Node_num_Grain_boundaries = []
     # *******************************************************
@@ -293,11 +316,11 @@ def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
                     # The list Ele_num_Total will be used in the later
                     Ele_num = int(subline.split(',')[0])
                     Ele_num_Total.append(Ele_num)
-                    
+            Elset_name_list.append(elset_Name)
             elementFile.close()
         # *******************************************************
         if '*elset' in line:
-            Ele_num_Grain_boundaries = Elset_access(line,InpFile_origin_lines,InpFile_New,Ele_num_Grain_boundaries)
+            Ele_num_Grain_boundaries = Elset_access(line,InpFile_origin_lines,InpFile_New,Ele_num_Grain_boundaries,Elset_name_list)
         # *******************************************************
         if '*nset' in line:
             Node_num_Grain_boundaries = Nset_access(line,InpFile_origin_lines,InpFile_New,Node_num_Grain_boundaries)
@@ -305,25 +328,27 @@ def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
     # *******************************************************
     # Create the new .inp file contains the element number of grain interior
     # *******************************************************
-    # Remove the repeated element number
-    Ele_num_Total = set(Ele_num_Total)
-    Ele_num_Grain_boundaries = set(Ele_num_Grain_boundaries)
-    Ele_num_Grain_interior = list(Ele_num_Total - Ele_num_Grain_boundaries)
-    elset_Name = 'gi'
-    elsetFile_path = "Ele_%s.inp"%elset_Name
-    elsetFile = open(elsetFile_path,'w')
-    DataLineWrite(Ele_num_Grain_interior,elsetFile)
+    if Ele_num_Grain_boundaries != None:
+        # Remove the repeated element number
+        Ele_num_Total = set(Ele_num_Total)
+        Ele_num_Grain_boundaries = set(Ele_num_Grain_boundaries)
+        Ele_num_Grain_interior = list(Ele_num_Total - Ele_num_Grain_boundaries)
+        elset_Name = 'gi'
+        elsetFile_path = "Ele_%s.inp"%elset_Name
+        elsetFile = open(elsetFile_path,'w')
+        DataLineWrite(Ele_num_Grain_interior,elsetFile)
     # *******************************************************
     # Create the new .inp file contains the node number of grain interior
     # *******************************************************
-    # Remove the repeated node number
-    Node_num_Total = set(Node_num_Total)
-    Node_num_Grain_boundaries = set(Node_num_Grain_boundaries)
-    Node_num_Grain_interior = Node_num_Total - Node_num_Grain_boundaries
-    nset_Name = 'gi'
-    nsetFile_path = "Nset_%s.inp"%nset_Name
-    nsetFile = open(nsetFile_path,'w')
-    DataLineWrite(Node_num_Grain_interior,nsetFile)
+    if Node_num_Grain_boundaries != None:
+        # Remove the repeated node number
+        Node_num_Total = set(Node_num_Total)
+        Node_num_Grain_boundaries = set(Node_num_Grain_boundaries)
+        Node_num_Grain_interior = Node_num_Total - Node_num_Grain_boundaries
+        nset_Name = 'gi'
+        nsetFile_path = "Nset_%s.inp"%nset_Name
+        nsetFile = open(nsetFile_path,'w')
+        DataLineWrite(Node_num_Grain_interior,nsetFile)
     # *******************************************************
     GrainGB_Extract(Inp_Split_folder,Ele_num_Grain_boundaries,Node_num_Grain_boundaries)
     # *******************************************************
@@ -335,6 +360,8 @@ def Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory):
     if os.path.exists(InpFile_split_old):
         os.remove(InpFile_split_old)
     shutil.move(InpFile_New_path,Directory)
+    print('-'*80)
+    return Elset_name_list
     
 
 
@@ -359,11 +386,10 @@ if __name__ == '__main__':
     [Directory,InpFile] = os.path.split(Inp_origin_file_path)
     # Create the folder to store the split inp file
     Inp_Split_folder = os.path.join(Directory,'Model')
-    if os.path.exists(Inp_Split_folder) == False:
-        os.mkdir(Inp_Split_folder)
+    os.makedirs(Inp_Split_folder, exist_ok=True)
     # *******************************************************
     #               Split the inp file
     # *******************************************************
-    Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory)
+    Elset_name_list = Inp_Split(Inp_Split_folder,Inp_origin_file_path,Directory,InpFile)
     print("{0:=^80}".format("Finished") + '\n')
     
