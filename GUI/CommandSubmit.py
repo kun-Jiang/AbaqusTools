@@ -3,11 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import subprocess
-from Src import RunInNewThread
+from utilities import RunInNewThread as Run_in_new_thread
 
 # from AbaqusTools.Src import Run_in_new_thread
-
-
 
 class create_cmd_gui():
     def __init__(self, parent):
@@ -30,7 +28,7 @@ class create_cmd_gui():
          
         # Create a button to run abaqus, and run it in a new thread by the function Run_in_new_thread
         self.CMD_button_run_abaqus = ttk.Button(self.tab_cmd, text="Call ABAQUS", 
-                                            command=lambda: RunInNewThread(run_abaqus()))
+                                            command=lambda: Run_in_new_thread(run_abaqus()))
         # Create a spinbox, default value is 2, indicate 2 cores
         self.cpu_cores_label = ttk.Label(self.tab_cmd, text="CPU cores:")
         self.cpu_cores_value = tk.IntVar(value=2)

@@ -13,7 +13,13 @@ def logwrite(message):
         log_file.write(message+'\n')
         print(message)
         log_file.close()
-
+        
+def Remove_file(folder, extension):
+    for file in os.listdir(folder):
+        if file.endswith(extension):
+            logwrite('Remove file: %s'%file)
+            os.remove(os.path.join(folder, file))
+            
 def save_as_file(data_vector, file_name):
     file_path = os.path.join(extracted_data_folder, '%s.dat'% file_name)
     [rows_num, columns_num] = np.shape(data_vector)
@@ -73,7 +79,7 @@ class Get_field_output():
         if self.output_option in ['U','U1','U2','U3']:
             field = np.zeros((len(self.field_output_values)/4,self.field_vector_length))
             pass
-        if self.output_option in ['LE']:
+        if self.output_option in ['LE','E']:
             field = np.zeros((len(self.field_output_values)/4,self.field_vector_length))
         # **********************************************************************
         # Obtain the output field values and store them in the array
@@ -146,7 +152,7 @@ class Get_field_output():
                     field[element_index,intergration_point_sequence] = field_value.data[0]
                 elif self.output_suboption == 'U2':
                     field[element_index,intergration_point_sequence] = field_value.data[1]
-            elif self.output_option == 'LE':
+            elif self.output_option in ['LE','E']:
                 # prettyprint(field_value)
                 # os._exit(0)
                 element_index = field_value.elementLabel-element_offset-1
@@ -223,13 +229,12 @@ class output_field_access():
         # Weight the UVARM of every integration point in element by the intergration point weight
         UVARM_Element_Weighted = np.dot(UVARM,intergration_point_Weight)
         # Write the user defined output field data into a txt file
-        # Write the user defined output field data into a txt file
-        UVARM_file_folder = os.path.join(extracted_data_folder,'UVARM')
-        if os.path.exists(UVARM_file_folder) == False:
-            os.mkdir(UVARM_file_folder)
-        with open(UVARM_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
-            for row in field_array:
-                file.write(str(row)+'\n')
+        # UVARM_file_folder = os.path.join(extracted_data_folder,'UVARM')
+        # if os.path.exists(UVARM_file_folder) == False:
+        #     os.mkdir(UVARM_file_folder)
+        # with open(UVARM_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
+        #     for row in field_array:
+        #         file.write(str(row)+'\n')
         Element_Weight = self.get_element_weight()
         UVARM_Total_Weighted = np.sum(UVARM_Element_Weighted*Element_Weight)
         return UVARM_Total_Weighted
@@ -247,9 +252,12 @@ class output_field_access():
         SDV_file_folder = os.path.join(extracted_data_folder,'SDV')
         if os.path.exists(SDV_file_folder) == False:
             os.mkdir(SDV_file_folder)
-        with open(SDV_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
-            for row in field_array:
-                file.write(str(row)+'\n')
+        # Write the data for each frame to the document
+        # with open(SDV_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
+        #     for row in field_array:
+        #         file.write(str(row)+'\n')
+        # np.savetxt(SDV_file_folder+'\%s_%s.txt'%(self.output_option, frame_count), 
+        #     field_array, fmt='%-4.2f', delimiter=',')
         Element_Weight = self.get_element_weight()
         SDV_Total_Weighted = np.sum(SDV_Element_Weighted*Element_Weight)
         return SDV_Total_Weighted
@@ -266,9 +274,10 @@ class output_field_access():
         Stress_file_folder = os.path.join(extracted_data_folder,'Stress')
         if os.path.exists(Stress_file_folder) == False:
             os.mkdir(Stress_file_folder)
-        with open(Stress_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
-            for row in field_array:
-                file.write(str(row)+'\n')
+        # Write the data for each frame to the document
+        # with open(Stress_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
+        #     for row in field_array:
+        #         file.write(str(row)+'\n')
         Element_Weight = self.get_element_weight()
         Stress_Total_Weighted = np.sum(Stress_Element_Weighted*Element_Weight)
         return Stress_Total_Weighted
@@ -355,7 +364,7 @@ def Output_filed_result(frame,output_option, output_suboption=None):
     elif output_option in ['U','U1','U2','U3']:
         Displacement_Total_Weighted = output_field_access(frame,output_option).get_displacement_value()
         Variable_Total_Weighted = Displacement_Total_Weighted
-    elif output_option in ['LE']:
+    elif output_option in ['LE', 'E']:
         Linear_Strain_Total_Weighted = output_field_access(frame,output_option).get_strain_value()
         Variable_Total_Weighted = Linear_Strain_Total_Weighted
     return Variable_Total_Weighted
@@ -374,6 +383,8 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     logwrite('*'*70 + '\n' +
              '*' + '{0:^68}'.format('Extracting Data from ODB') + '*' + '\n' +
              '*'*70)
+    files_list = os.listdir(working_directory)
+    Remove_file(working_directory, 'lck')
     # *********************************************************************************************************************
     # Set the parameters
     # *********************************************************************************************************************
@@ -400,13 +411,26 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     logwrite('{0:<25s}'.format('Output field parameter') + ':' + output_option + '\t' + output_suboption + '\n' +
              '-'*60)
     # Open the ODB file
-    print(working_directory)
     try:
         odb_file_path = os.path.join(working_directory,odb_file_name)
+        logwrite('Odb file path: ' + odb_file_path)
         odb = openOdb(odb_file_path,readOnly=True)
         logwrite("Open the ODB file successfully")
     except:
-        logwrite("There is no ODB file named " + odb_file_name)
+        try:
+            upgrade_odb_file_name = 'upgraded_' + odb_file_name
+            upgrade_odb_path = os.path.join(working_directory,upgrade_odb_file_name)
+            logwrite("Fail to open the ODB file, try to upgrade the ODB file" + '\n' +
+                     'New odb file path: ' + upgrade_odb_path)
+            if os.path.exists(upgrade_odb_path):
+                logwrite('The upgraded Odb file already exists.')
+            else:
+                upgradeOdb(existingOdbPath=odb_file_path, upgradedOdbPath=upgrade_odb_path)
+            logwrite("Upgrade the ODB file successfully")
+            odb_file_path = upgrade_odb_path
+            odb = openOdb(odb_file_path, readOnly=True)
+        except:
+            logwrite('Fail to open the Odb file, please check it.')
     # Extract the data in the specified step
     # prettyprint(len(odb.steps.keys()))
     # os._exit(0)
@@ -516,7 +540,9 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
                 logwrite('The weighted %s of the specified frame is %f'%(output_option,Variable_Total_Weighted))
     # *********************************************************************************************************************
     # The extraction is finished
-    logwrite('{0:*^70}'.format('Finished'))
+    logwrite('{0:<25s}'.format('ODB file name') + ':' + odb_file_path + '\n' +
+             '{0:<25s}'.format('Output field parameter') + ':' + output_option + '\t' + output_suboption + '\n' +
+             '{0:*^70}'.format('Finished'))
           
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='The script of spliting the ABAQUS inp file')
