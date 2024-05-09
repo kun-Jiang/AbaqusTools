@@ -22,6 +22,8 @@ class create_odb_extract_gui():
         self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV')
         self.Output_suboptions_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
         self.Output_suboptions_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.Output_suboptions_entry.insert(tk.END, '1')
+        self.Output_options_combobox.current(5)
         # Get necessary information for odb extract
         #---------------------------------Dimension---------------------------------#
         self.Dimension_label = ttk.Label(self.tab_odb_extract, text="Dimension:")
