@@ -185,18 +185,104 @@ class Get_field_output():
             # **************************************************************************************
             elif 'SDV' in self.output_option:
                 # The SDV variable is defined in normal elements, so there isn't offset in the element number
-                element_index = field_value.elementLabel-1
+                element_index = field_value.elementLabel-element_offset-1
                 intergration_point_sequence = field_value.integrationPoint
+                # prettyprint(intergration_point_sequence)
                 field[element_index,0] = field_value.elementLabel
                 field[element_index,intergration_point_sequence] = field_value.data
         # print(field_value.elementLabel-1)
         return field
     
 class output_field_access():
-    def __init__(self, frame, output_option, output_suboption=None):
+    def __init__(self, frame, output_option, output_suboption=None, method='gauss_integration'):
         self.frame = frame
         self.output_option = output_option
         self.output_suboption = output_suboption
+        # There are two methods to calculate the field value:
+        # 1. gauss_integration: calculate the area/volume integral of the field value (accurate but slow)
+        # 2. volume_average   : calculate the volume average of the field value (fast but not accurate)
+        self.method = method
+        
+        self.dimension = 2
+        self.element_type = 'isoparametric'
+        self.coords = self.getNodalCoordinates()
+        self.EleConnectivity = self.getElementsConnectivity()
+        # print(self.EleConnectivity)
+    def getNodalCoordinates(self):
+        nodes = self.frame.fieldOutputs[self.output_option].values[0].instance.nodes
+        coords = np.zeros((len(nodes),3))
+        for node in nodes:
+            coords[node.label-1] = node.coordinates
+        np.savetxt('coords.txt',coords,fmt='%f')
+        return coords
+    
+    def getElementsConnectivity(self):
+        elements = self.frame.fieldOutputs[self.output_option].values[0].instance.elements
+        if self.dimension == 2:
+            if self.element_type == 'isoparametric':
+                connectivity = np.zeros((len(elements),4))
+        for element in elements:
+            connectivity[element.label-1] = element.connectivity
+        connectivity = connectivity.astype(int)
+        np.savetxt('connectivity.txt',connectivity,fmt='%d')
+        return connectivity
+    
+    def gauss_integ(self, field_values):
+        if self.dimension == 2:
+            if self.element_type == 'isoparametric':
+                gauss_point = np.array([
+                    [-1/np.sqrt(3),-1/np.sqrt(3)],
+                    [1/np.sqrt(3),-1/np.sqrt(3)],
+                    [1/np.sqrt(3),1/np.sqrt(3)],
+                    [-1/np.sqrt(3),1/np.sqrt(3)]
+                ])
+                gauss_weight = np.array([1,1,1,1])
+        
+        
+        coords = self.coords
+        # !!!! Need to be modified
+        # The connectivity of the element is hard coded here, because the first and second layer
+        # of the element connectivity are repeated, so only the third layer is used
+        connectivity = self.EleConnectivity[np.shape(self.EleConnectivity)[0]/3*2:,:]
+        field_integ_total = 0
+        field_integ_element = np.zeros(len(connectivity))
+        for i,nodes in enumerate(connectivity):
+            node_coords = np.zeros((4,2))
+            for k,node in enumerate(nodes):
+                node_coords[k] = coords[node-1,:2]
+            for j in range(len(gauss_point)):
+                integ = 0
+                xi, eta = gauss_point[j]
+                weight = gauss_weight[j]
+                N, dN_dxi = self.shape_function(xi, eta)
+                # J = np.dot(dN_dxi[:,j],node_coords)
+                J = np.zeros((2,2))
+                for l in range(len(gauss_point)):
+                    J[0, 0] += dN_dxi[0, l] * node_coords[l, 0]
+                    J[0, 1] += dN_dxi[0, l] * node_coords[l, 1]
+                    J[1, 0] += dN_dxi[1, l] * node_coords[l, 0]
+                    J[1, 1] += dN_dxi[1, l] * node_coords[l, 1]
+                detJ = np.linalg.det(J)
+                integ = field_values[i,j] * detJ * weight
+                field_integ_total += integ
+
+                field_integ_element[i] += integ
+        return field_integ_element, field_integ_total
+    
+    def shape_function(self, xi, eta):
+        if self.dimension == 2:
+            if self.element_type == 'isoparametric':
+                N1 = 0.25 * (1 - xi) * (1 - eta)
+                N2 = 0.25 * (1 + xi) * (1 - eta)
+                N3 = 0.25 * (1 + xi) * (1 + eta)
+                N4 = 0.25 * (1 - xi) * (1 + eta)
+                
+                dN_dxi = np.array([
+                    [-0.25 * (1 - eta), 0.25 * (1 - eta), 0.25 * (1 + eta), -0.25 * (1 + eta)],
+                    [-0.25 * (1 - xi), -0.25 * (1 + xi), 0.25 * (1 + xi), 0.25 * (1 - xi)]
+                ])
+        return np.array([N1,N2,N3,N4]), dN_dxi
+    
     def get_element_weight(self):
         field_array = Get_field_output(self.frame, 'EVOL', field_vector_length=2).get_values_array()
         # Get the column that contains element volume and calculate the total volume
@@ -242,25 +328,25 @@ class output_field_access():
     def get_sdv_value(self):
         field_array = Get_field_output(self.frame, self.output_option, field_vector_length=5).get_values_array()
         SDV = field_array[:,1:]
-        [ rows_num, columns_num] = np.shape(SDV)
-        SDV_Element_Weighted = np.zeros([rows_num,1])
-        intergration_point_Weight = [[1./4],[1./4],[1./4],[1./4]]
-        # Weight the SDV of every integration point in element by the intergration point weight
-        SDV_Element_Weighted = np.dot(SDV,intergration_point_Weight)
-        # Write the user defined output field data into a txt file
-        # Write the user defined output field data into a txt file
+        if self.method == 'gauss_integration':
+            SDV_Element_Weighted, SDV_total = self.gauss_integ(SDV)
+        elif self.method == 'volume_average':
+            [ rows_num, columns_num] = np.shape(SDV)
+            SDV_Element_Weighted = np.zeros([rows_num,1])
+            intergration_point_Weight = [[1./4],[1./4],[1./4],[1./4]]
+            # Weight the SDV of every integration point in element by the intergration point weight
+            SDV_Element_Weighted = np.dot(SDV,intergration_point_Weight)
+            Element_Weight = self.get_element_weight()
+            SDV_total = np.sum(SDV_Element_Weighted*Element_Weight)
+        
+        # Write the solution dependent variable output field data into file
         SDV_file_folder = os.path.join(extracted_data_folder,'SDV')
         if os.path.exists(SDV_file_folder) == False:
             os.mkdir(SDV_file_folder)
         # Write the data for each frame to the document
-        # with open(SDV_file_folder+'\%s_%s.txt'%(self.output_option, frame_count),'w') as file:
-        #     for row in field_array:
-        #         file.write(str(row)+'\n')
         # np.savetxt(SDV_file_folder+'\%s_%s.txt'%(self.output_option, frame_count), 
-        #     field_array, fmt='%-4.2f', delimiter=',')
-        Element_Weight = self.get_element_weight()
-        SDV_Total_Weighted = np.sum(SDV_Element_Weighted*Element_Weight)
-        return SDV_Total_Weighted
+        #     SDV_Element_Weighted, fmt='%-4.5e', delimiter=',')
+        return SDV_total
 
     def get_stress_value(self):
         field_array = Get_field_output(self.frame, self.output_option, field_vector_length=5).get_values_array()
@@ -487,6 +573,7 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     global frame_count
     frame_count = 0
     for step_sequence in range(step_num):
+        logwrite('{0:-^70}'.format('Step: %s'%step_name[step_sequence]))
         step = odb.steps[step_name[step_sequence]]
         # ----------------------------------------------------------------------------------------------------------------
         # Extract the data in the every frame

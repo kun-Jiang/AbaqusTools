@@ -48,57 +48,67 @@ class Inpsplit:
             #                             loop over the original inp file
             # **************************************************************************************************
             InpFile_lines_iter = iter(InpFile_origin_lines)
-            Node_count = 0
-            Element_count = 0
+            self.Node_count = 0
+            self.Element_count = 0
             line = next(InpFile_lines_iter)
-            InpFile_split.write(line)
             while True:
-
-                # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                #                                         Caution 
-                # It's worth noting that the return line of the '***Access' function represents the current line 
-                # of the iterator. Therefore, it's important to use 'if' statements to check the return value 
-                # of 'line' sequentially, rather than 'elif'. Otherwise, if 'elif' is used, the value of 'line' 
-                # will still hold its previous value before calling the '***Access' function.
-                # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                # Convert the line to lower case to conviently compare the string
-                if '*node' in line.lower() and 'output' not in line.lower():
-                    # If the line contains '*node' and not contains 'output', 
-                    # create a new node file and write the node information to the new file
-                    Node_count += 1
-                    # InpFile_split.write(line)
-                    line = self.NodeAccess(Node_count,InpFile_lines_iter)
-                    InpFile_split.write('*include, input=Model\\Node_%s.inp\n'%Node_count)
-                elif line != None and '*element' in line.lower() and 'output' not in line.lower():
-                    # If the line contains '*element' and not contains 'output',
-                    # create a new element file and write the element information to the new file
-                    Element_count += 1
-                    # InpFile_split.write(line)
-                    line = self.ElementAccess(Element_count,InpFile_lines_iter)
-                    InpFile_split.write('*include, input=Model\\Element_%s.inp\n'%Element_count)               
-                elif line != None and 'elset' in line.lower():
-                    # If the line contains 'elset', write the line to the new inp file
-                    # InpFile_split.write(line)
-                    line, Elset_Name = self.ElsetAccess(InpFile_lines_iter, line)
-                    if Elset_Name != None:
-                        InpFile_split.write('*include, input=Model\\Elset_%s.inp\n'%Elset_Name)          
-                elif line != None and 'nset' in line.lower():
-                    # If the line contains 'nset', write the line to the new inp file
-                    # InpFile_split.write(line)
-                    line, Nset_Name = self.NsetAccess(InpFile_lines_iter, line)
-                    InpFile_split.write('*include, input=Model\\Nset_%s.inp\n'%Nset_Name)       
-                else:
-                    line = next(InpFile_lines_iter, None)
-                if line == None:
-                    break
-                # Iterate each line of the original inp file
                 # line = next(InpFile_lines_iter, None)
                 if line == None:
                     # If the end of the file is reached, break the loop
                     break
-                InpFile_split.write(line)
+                line,judge = self.KeywordJudge(line,InpFile_lines_iter,InpFile_split)
+                if line == None:
+                    break
+                # If the line doesn't contain the specific keyword, write the line to the new inp file
+                # and iterate to the next line.
+                if judge == False:
+                    InpFile_split.write(line)
+                    line = next(InpFile_lines_iter, None)
 
-    
+    def KeywordJudge(self,line_start:str,InpFile_lines_iter:iter,InpFile_split:str)->str:
+        judge = False
+        line_temp = line_start.strip()
+        keyword = line_temp.split(',')[0].lower()
+        if line_start != None and keyword == '*node':
+            # If the line contains '*node' and not contains 'output', 
+            # create a new node file and write the node information to the new file
+            self.Node_count += 1
+            # Write the line which contains the keyword '*node' to the new inp file
+            InpFile_split.write(line_start)
+            line = self.NodeAccess(self.Node_count,InpFile_lines_iter)
+            InpFile_split.write('*include, input=Model\\Node_%s.inp\n'%self.Node_count)
+            judge = True
+            
+        elif line_start != None and keyword == '*element':
+            # If the line contains '*element' and not contains 'output',
+            # create a new element file and write the element information to the new file
+            self.Element_count += 1
+            # Write the line which contains the keyword '*element' to the new inp file
+            InpFile_split.write(line_start)
+            line = self.ElementAccess(self.Element_count,InpFile_lines_iter)
+            InpFile_split.write('*include, input=Model\\Element_%s.inp\n'%self.Element_count)
+            judge = True
+        elif line_start != None and keyword == '*elset':
+            # If the line contains 'elset', write the line to the new inp file
+            # InpFile_split.write(line)
+            line, Elset_Name = self.ElsetAccess(InpFile_lines_iter, line_start, InpFile_split)
+            if Elset_Name != None:
+                InpFile_split.write('*include, input=Model\\Ele_%s.inp\n'%Elset_Name)
+            judge = True
+        elif line_start != None and keyword == '*nset':
+            # If the line contains 'nset', write the line to the new inp file
+            # InpFile_split.write(line)
+            line, Nset_Name = self.NsetAccess(InpFile_lines_iter, line_start, InpFile_split)
+            if Nset_Name != None:
+                InpFile_split.write('*include, input=Model\\Nset_%s.inp\n'%Nset_Name)
+            judge = True
+        # If the input line does not contain the specified keyword (judge = False), 
+        # just return the input line and don't iterate the next line, 
+        # else return the iterated line (judge = True)
+        if judge == False:
+            line = line_start
+        return line,judge
+        
     def NodeAccess(self,Node_count:int,InpFile_lines_iter:iter)->str:
         """Extract the node information from the original inp file and write it to the new node file
 
@@ -145,7 +155,7 @@ class Inpsplit:
                 ElementFile.write(line)
             return line
         
-    def ElsetAccess(self,InpFile_lines_iter:iter, line_start:str):
+    def ElsetAccess(self,InpFile_lines_iter:iter, line_start:str,InpFile_split:str)->str:
         """Extract the elset information from the original inp file and write it to the new elset file
 
         Args:
@@ -157,26 +167,36 @@ class Inpsplit:
             Elset_Name (str): _description_
         """        
         # Remove the '\n' at the end of the string
-        line_start = line_start.strip()
-        line_split = line_start.split(',')
+        line_temp = line_start.strip()
+        line_split = line_temp.split(',')
         try:
-            if 'solid section' in line_split[0].lower():
-                line = next(InpFile_lines_iter, None)
-                return line, None
-            for item in line_split:
-
-                if 'elset=' in item.lower():
-                    Elset_Name = item.split('=')[1]
-                    if '"' in Elset_Name:
-                        Elset_Name = Elset_Name.replace('"','')
-                if 'generate' in item.lower():
+            if '*elset' in line_split[0].lower():
+                Elset_Name = line_split[1].split('=')[1]
+                if 'generate' in line_start.lower():
+                    # Remove the 'generate' keyword from the line and write the line
+                    # which contains the keyword 'elset' to the new inp file
+                    line_temp = ','.join(line_split[:-1]) + '\n'
+                    InpFile_split.write(line_temp)
+                    # Extract the start, end, and step information from the line
                     line = next(InpFile_lines_iter, None)
-                    return line, None
+                    line_split = line.split(',')
+                    start = int(line_split[0])
+                    end = int(line_split[1])
+                    step = int(line_split[2])
+                    ele_sequence = self.Sequence_Generate(start, end, step)
+                    with open('Ele_' + Elset_Name + '.inp','w') as ElsetFile:
+                        self.DataLineWrite(ele_sequence, ElsetFile)
+                    line = next(InpFile_lines_iter, None)
+                    return line, Elset_Name
+            else:
+                line = line_start
+                return line, None
         except:
-            logging.error('There is an error when extracting the nset name\n' +
+            logging.error('There is an error when extracting the elset name\n' +
                           'Error in line: ' + line_start,
                           exc_info=True)
-        with open('Elset_' + Elset_Name + '.inp','w') as ElsetFile:
+        InpFile_split.write(line_start)
+        with open('Ele_' + Elset_Name + '.inp','w') as ElsetFile:
             while True:
                 # Iterate each line of the original inp file to extract the
                 # nset information until the next '*' in the line
@@ -190,20 +210,37 @@ class Inpsplit:
                 # Write the nset information to the new nset file
                 ElsetFile.write(line)
     
-    def NsetAccess(self,InpFile_lines_iter:iter, line_start:str):
+    def NsetAccess(self,InpFile_lines_iter:iter, line_start:str,InpFile_split:str)->str:
         # Remove the '\n' at the end of the string
-        line_start = line_start.strip()
-        line_split = line_start.split(',')
+        line_temp = line_start.strip()
+        line_split = line_temp.split(',')
         try:
-            for item in line_split:
-                if 'nset=' in item.lower():
-                    Nset_Name = item.split('=')[1]
-                    if '"' in Nset_Name:
-                        Nset_Name = Nset_Name.replace('"','')
+            if '*nset' in line_split[0].lower():
+                Nset_Name = line_split[1].split('=')[1]
+                if 'generate' in line_start.lower():
+                    # Remove the 'generate' keyword from the line and write the line
+                    # which contains the keyword 'nset' to the new inp file
+                    line_temp = ','.join(line_split[:-1]) + '\n'
+                    InpFile_split.write(line_temp)
+                    # Extract the start, end, and step information from the line
+                    line = next(InpFile_lines_iter, None)
+                    line_split = line.split(',')
+                    start = int(line_split[0])
+                    end = int(line_split[1])
+                    step = int(line_split[2])
+                    node_sequence = self.Sequence_Generate(start, end, step)
+                    with open('Nset_' + Nset_Name + '.inp','w') as NsetFile:
+                        self.DataLineWrite(node_sequence, NsetFile)
+                    line = next(InpFile_lines_iter, None)
+                    return line, Nset_Name
+            else:
+                line = line_start
+                return line, None
         except:
             logging.error('There is an error when extracting the nset name\n' +
                           'Error in line: ' + line_start,
                           exc_info=True)
+        InpFile_split.write(line_start)
         with open('Nset_' + Nset_Name + '.inp','w') as NsetFile:
             while True:
                 # Iterate each line of the original inp file to extract the
