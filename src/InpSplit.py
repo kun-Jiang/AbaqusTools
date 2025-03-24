@@ -1,7 +1,6 @@
 import os
 import math
-import logging
-from utilities.logConfig import logconfig
+from utilities.logConfig import logconfig, logging
 
 class Inpsplit:
     
@@ -102,6 +101,12 @@ class Inpsplit:
             if Nset_Name != None:
                 InpFile_split.write('*include, input=Model\\Nset_%s.inp\n'%Nset_Name)
             judge = True
+        elif line_start != None and keyword == '*distribution':
+            # If the line contains 'Distribution', write the line to the new inp file
+            InpFile_split.write(line_start)
+            line = self.DistributionAccess(InpFile_lines_iter)
+            InpFile_split.write('*include, input=Model\\Distribution_table.inp\n')
+            judge = True
         # If the input line does not contain the specified keyword (judge = False), 
         # just return the input line and don't iterate the next line, 
         # else return the iterated line (judge = True)
@@ -153,7 +158,7 @@ class Inpsplit:
                     break
                 # Write the element information to the new element file
                 ElementFile.write(line)
-            return line
+        return line
         
     def ElsetAccess(self,InpFile_lines_iter:iter, line_start:str,InpFile_split:str)->str:
         """Extract the elset information from the original inp file and write it to the new elset file
@@ -255,6 +260,29 @@ class Inpsplit:
                 # Write the nset information to the new nset file
                 NsetFile.write(line)
     
+    def DistributionAccess(self, InpFile_lines_iter:iter)->str:
+        """Extract the distribution table from the original inp file and write it to the new file
+
+        Args:
+            InpFile_lines_iter (iter): an iterator of the original inp file
+
+        Returns:
+            line: the current line of the iterator
+        """        
+        with open("Distribution_table.inp",'w') as DistributionFile:
+            while True:
+                # Iterate each line of the original inp file to extract the 
+                # element information until the next '*' in the line
+                line = next(InpFile_lines_iter, None)
+                if line == None or '*' in line:
+                    # line == None: The iterator reaches the end of the file
+                    # '*' in line : The line contains '*', return the line and break the loop
+                    # return line
+                    break
+                # Write the element information to the new element file
+                DistributionFile.write(line)
+        return line
+        
     def Sequence_Generate(self,start:int,end:int,inc:int)->list:
         """This function is used to generate a sequence of numbers
 

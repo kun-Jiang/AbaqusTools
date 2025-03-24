@@ -1,9 +1,9 @@
 import os
-import logging
-from utilities.logConfig import logconfig
+import numpy as np
+from utilities.logConfig import logconfig, logging
 
 class Num_Offset:
-    def __init__(self,input_file_path:str,Offset_Magnitude:int) -> None:
+    def __init__(self,input_file_path:str, Offset_Magnitude:int, layer_info:dict) -> None:
         # *******************************************************
         print("{0:=^80}".format("EleNum_Offset Process"))
         # *******************************************************
@@ -16,6 +16,9 @@ class Num_Offset:
         # Remove the space before the string
         # E.g. Directory = ' D:/Desktop' --> 'D:/Desktop' 
         self.input_file_path = self.input_file_path.strip()
+        # Get the layer information from the dictionary
+        # E.g. layer_info = {'Mech':1, 'Chem':2}
+        self.layer_info = layer_info
         # ***************************************************************************
         # Split the file path into directory and file name
         # E.g. Offset_origin_file_path = 'D:/Desktop/xx.inp'
@@ -28,7 +31,21 @@ class Num_Offset:
         # ***************************************************************************
         #               Set the log file
         # ***************************************************************************
-        logconfig('NumOffset.log',self.Origin_Directory)
+        logconfig('NumOffset.log',self.EleNum_Offset_folder)
+        # ***************************************************************************
+        #              Automatically calculate the offset magnitude
+        # ***************************************************************************
+        # If the offset magnitude is given as 0, then the offset magnitude will be
+        # the maximum element number in the inp file.
+        connectivity = np.loadtxt(self.input_file_path,delimiter=',',dtype=int)
+        elements_num = connectivity[:,0]
+        if self.Offset_Magnitude == 0:
+            self.Offset_Magnitude = np.max(elements_num)
+        elif self.Offset_Magnitude < np.max(elements_num):
+            self.Offset_Magnitude = np.max(elements_num)
+            logging.warning(
+                "The offset magnitude is smaller than the maximum element"
+                "number in the inp file, the offset magnitude will be set to the maximum element number.")
         # ***************************************************************************
         #               Adding the offset to the element number
         # ***************************************************************************
@@ -77,31 +94,20 @@ class Num_Offset:
         logging.info("{0:<40}:{1:^15}".format('Input file prefix',InpFile_prefix))
         logging.info("{0:<40}:{1:^15}".format('Offset mode',Offset_mode))
         logging.info("{0:<40}:{1:^15}".format('Element number offset magnitude',self.Offset_Magnitude))
-        # ***************************************************************************
-        # Reading the layer information from the layer_info.txt file
-        layer_info = []
-        layer_info_file = open(os.path.join(self.Origin_Directory,'layer_info.txt'),'r')
-        layer_info_file_lines = layer_info_file.readlines()
-        for line in layer_info_file_lines:
-            # Extracting the layer name and layer multiplier
-            # E.g. line = 'Mech,1' --> layer_name = 'Mech', layer_multiplier = 1
-            line_split = line.split(',')
-            layer_name = line_split[0]
-            layer_multiplier = int(line_split[1].split('\n')[0])
-            layer_info.append([layer_name,layer_multiplier])
         # ===========================================================================
         #
         #                      Element number offset
         #
         # ===========================================================================  
-        logging.info("{0:-^70}".format("Output"))
+        logging.info("{0:-^80}".format("Output"))
         logging.info("{0:^40}{1:^15}".format("Output file name","Multiplier"))
         with open(self.input_file_path,'r') as Inp_Origin_File:
             Inp_Origin_lines = Inp_Origin_File.readlines()
-        for layer in layer_info:
+        # for layer in layer_info:
+        for key, value in self.layer_info.items():
             # Get the layer name and layer multiplier
-            layer_name       = layer[0]
-            layer_multiplier = layer[1]
+            layer_name = key
+            layer_multiplier = int(value)
             EleNumOffset     = self.Offset_Magnitude*layer_multiplier
             if Offset_mode == 1:
                 layer_file_name  = '%s_%s_%s'%(InpFile_prefix,InpFile_suffix,layer_name)
@@ -110,9 +116,11 @@ class Num_Offset:
             logging.info("{0:^40}{1:^15}".format(layer_file_name,layer_multiplier))
             # with open('%s.inp'%layer_file_name,'w') as Inp_Offset_File:
             if Offset_mode == 1:
-            # -------------------------------------------------------
-            # Considering that the file just contains elements number in element set,
-            # so every elemnts in line should be offseted.
+                # Due to the last line of the file isn't always contain same number of 
+                # objects as other lines, so the numpy is not suitable for manipulating the file.
+                # -------------------------------------------------------
+                # Considering that the file just contains elements number in element set,
+                # so every elemnts in line should be offseted.
                 with open("%s.inp"%layer_file_name,'w') as InpFile:
                     for Real_line in Inp_Origin_lines:
                         Real_line = Real_line.strip('\n')
@@ -129,14 +137,21 @@ class Num_Offset:
                         offset_line = ','.join(EleNum_list)
                         InpFile.write(offset_line + '\n')
             elif Offset_mode == 2:
-                with open("%s.inp"%layer_file_name,'w') as InpFile:
-                    for Real_line in Inp_Origin_lines:
-                        Real_line = Real_line.strip('\n')
-                        offset_line = ''
-                        # Spliting the single element label from the line
-                        EleNum_temp = Real_line.split(',')
-                        # Solely adding the offset on the element label
-                        EleNum = int(EleNum_temp[0]) + EleNumOffset
-                        # Merge the element label and node label
-                        offset_line = str(EleNum) + ',' + ','.join(EleNum_temp[1:])
-                        InpFile.write(offset_line + '\n')    
+                # Operating offset through numpy
+                output_file = '%s.inp'%layer_file_name
+                Element_Connectivity = np.loadtxt(self.input_file_path, delimiter=',', dtype=int)
+                # Adding the offset on the element label
+                Element_Connectivity[:,0] += EleNumOffset
+                np.savetxt(output_file, Element_Connectivity, fmt='%d', delimiter=',')
+                # Operating offset through string manipulation which seems to be faster, but I don't know why.
+                # with open("%s.inp"%layer_file_name,'w') as InpFile:
+                #     for Real_line in Inp_Origin_lines:
+                #         Real_line = Real_line.strip('\n')
+                #         offset_line = ''
+                #         # Spliting the single element label from the line
+                #         EleNum_temp = Real_line.split(',')
+                #         # Solely adding the offset on the element label
+                #         EleNum = int(EleNum_temp[0]) + EleNumOffset
+                #         # Merge the element label and node label
+                #         offset_line = str(EleNum) + ',' + ','.join(EleNum_temp[1:])
+                #         InpFile.write(offset_line + '\n')    

@@ -17,5 +17,5 @@ class logconfig():
             # Configure the console output
             console_handler = logging.StreamHandler()
             console_handler.setLevel(logging.INFO)
-            console_handler.setFormatter(logging.Formatter('%(message)s'))
+            console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
             logging.getLogger().addHandler(console_handler)

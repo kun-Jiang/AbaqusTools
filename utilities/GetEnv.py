@@ -8,7 +8,7 @@ def Get_ABAQUS_env():
     for address in PATH_address:
         if ('aba' or 'abaqus') in address.lower():
             if 'command' in address.lower():
-                ABAQUS_env = address
+                ABAQUS_env, _ = os.path.split(address)
             for root, dirs, files in os.walk(address):
                 try:
                     for dir in dirs:
