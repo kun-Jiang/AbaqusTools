@@ -20,17 +20,6 @@ def Remove_file(folder, extension):
             logwrite('Remove file: %s'%file)
             os.remove(os.path.join(folder, file))
             
-def save_as_file(data_vector, file_name):
-    file_path = os.path.join(extracted_data_folder, '%s.dat'% file_name)
-    [rows_num, columns_num] = np.shape(data_vector)
-    with open(file_path,'w') as data_file:
-        for row in range(rows_num):
-            row_data = []
-            for column in range(columns_num):
-                row_data.append(float(data_vector[row,column]))
-            row_line = ','.join(str(x) for x in row_data) + '\n'
-            data_file.write(row_line)
-
 class Run_in_new_thread():
     def __init__(self, func):
         self.func = func
@@ -39,10 +28,10 @@ class Run_in_new_thread():
 
 class Get_field_output():
     
-    def __init__(self, current_frame, output_option, output_suboption=None, field_vector_length=None):
+    def __init__(self, current_frame, output_option, output_index=None, field_vector_length=None):
         self.current_frame = current_frame
         self.output_option = output_option
-        self.output_suboption = output_suboption
+        self.output_index = output_index
         self.field_vector_length = field_vector_length
         # Identify the length of the field vector, that is, the number of components
 
@@ -81,6 +70,8 @@ class Get_field_output():
             pass
         if self.output_option in ['LE','E']:
             field = np.zeros((len(self.field_output_values)/4,self.field_vector_length))
+        if 'NT' in self.output_option:
+            field = np.zeros(len(self.field_output_values))
         # **********************************************************************
         # Obtain the output field values and store them in the array
         # There are kinds of output field, such as UVARM, EVOL, SDV, etc. 
@@ -93,9 +84,12 @@ class Get_field_output():
             if count == 0:
                 # As usual, the number of the first element is 1, 
                 # if the number of the first element is not 1, there exist a offset
+                # prettyprint(field_value.elementLabel)
                 if field_value.elementLabel != None:
                     # Some field outputs are defined on the node, so there isn't element label
                     element_offset = field_value.elementLabel -1
+                else:
+                    element_offset = 0
                 count += 1
             # **************************************************************************************
             # Output the volume of the element
@@ -122,15 +116,15 @@ class Get_field_output():
                 # Output the stress
                 # prettyprint(odb.rootAssembly.elementSets)
                 # os._exit(0)
-                if self.output_suboption == None:
-                    # If the output_suboption is not specified, default output the von mises stress
+                if self.output_index == None:
+                    # If the output_index is not specified, default output the von mises stress
                     # field[element_index,intergration_point_sequence] = self.field_output.getSubset(region=odb.rootAssembly.elementSets['Ele_Mech']).getScalarField(componentLabel='Mises')
                     field[element_index,intergration_point_sequence] = field_value.mises
-                elif self.output_suboption == 'S11':
+                elif self.output_index == 'S11':
                     field[element_index,intergration_point_sequence] = field_value.data[0]
-                elif self.output_suboption == 'S22':
+                elif self.output_index == 'S22':
                     field[element_index,intergration_point_sequence] = field_value.data[1]
-                elif self.output_suboption == 'S33':
+                elif self.output_index == 'S33':
                     field[element_index,intergration_point_sequence] = field_value.data[2]   
             # **************************************************************************************
             # Output the displacement of the element
@@ -145,12 +139,12 @@ class Get_field_output():
                     continue
                 field[element_index,0] = field_value.nodeLabel
                 # Output the displacement
-                if self.output_suboption == None:
-                    # If the output_suboption is not specified, default output the magnitude of the displacement
+                if self.output_index == None:
+                    # If the output_index is not specified, default output the magnitude of the displacement
                     field[element_index,intergration_point_sequence] = field_value.magnitude
-                elif self.output_suboption == 'U1':
+                elif self.output_index == 'U1':
                     field[element_index,intergration_point_sequence] = field_value.data[0]
-                elif self.output_suboption == 'U2':
+                elif self.output_index == 'U2':
                     field[element_index,intergration_point_sequence] = field_value.data[1]
             elif self.output_option in ['LE','E']:
                 # prettyprint(field_value)
@@ -190,30 +184,37 @@ class Get_field_output():
                 # prettyprint(intergration_point_sequence)
                 field[element_index,0] = field_value.elementLabel
                 field[element_index,intergration_point_sequence] = field_value.data
+            # **************************************************************************************
+            # Output the nodal temperature of the element
+            # **************************************************************************************
+            elif 'NT' in self.output_option:
+                node_label = field_value.nodeLabel - 1
+                field[node_label] = field_value.data
+                
         # print(field_value.elementLabel-1)
         return field
     
 class output_field_access():
-    def __init__(self, frame, output_option, output_suboption=None, method='gauss_integration'):
+    def __init__(self, frame, output_option, dimension, output_index=None, method='gauss_integration'):
         self.frame = frame
         self.output_option = output_option
-        self.output_suboption = output_suboption
+        self.output_index = output_index
         # There are two methods to calculate the field value:
         # 1. gauss_integration: calculate the area/volume integral of the field value (accurate but slow)
         # 2. volume_average   : calculate the volume average of the field value (fast but not accurate)
         self.method = method
         
-        self.dimension = 2
+        self.dimension = dimension
         self.element_type = 'isoparametric'
         self.coords = self.getNodalCoordinates()
-        self.EleConnectivity = self.getElementsConnectivity()
         # print(self.EleConnectivity)
     def getNodalCoordinates(self):
         nodes = self.frame.fieldOutputs[self.output_option].values[0].instance.nodes
         coords = np.zeros((len(nodes),3))
         for node in nodes:
             coords[node.label-1] = node.coordinates
-        np.savetxt('coords.txt',coords,fmt='%f')
+        file_path = os.path.join(extracted_data_folder,'Nodal_Coordinates.txt')
+        np.savetxt(file_path,coords,fmt='%f')
         return coords
     
     def getElementsConnectivity(self):
@@ -221,13 +222,18 @@ class output_field_access():
         if self.dimension == 2:
             if self.element_type == 'isoparametric':
                 connectivity = np.zeros((len(elements),4))
+        elif self.dimension == 3:
+            if self.element_type == 'isoparametric':
+                connectivity = np.zeros((len(elements),8))
         for element in elements:
             connectivity[element.label-1] = element.connectivity
         connectivity = connectivity.astype(int)
-        np.savetxt('connectivity.txt',connectivity,fmt='%d')
+        file_path = os.path.join(extracted_data_folder,'Element_Connectivity.txt')
+        np.savetxt(file_path, connectivity,fmt='%d')
         return connectivity
     
     def gauss_integ(self, field_values):
+        self.EleConnectivity = self.getElementsConnectivity()
         if self.dimension == 2:
             if self.element_type == 'isoparametric':
                 gauss_point = np.array([
@@ -388,7 +394,7 @@ class output_field_access():
         return Strain_Total_Weighted
     
     def get_displacement_value(self):
-        field_array = Get_field_output(self.frame, self.output_option, output_suboption='U1', field_vector_length=3).get_values_array()
+        field_array = Get_field_output(self.frame, self.output_option, output_index='U1', field_vector_length=3).get_values_array()
         Displacement = field_array[:,1:]
         [ rows_num, columns_num] = np.shape(Displacement)
         Displacement_Total_Weighted = np.sum(Displacement[:,1])/float(rows_num)
@@ -400,16 +406,26 @@ class output_field_access():
             for row in field_array:
                 file.write(str(row)+'\n')
         return Displacement_Total_Weighted
+    
+    def get_nt_value(self):
+        Nodal_Temperature = Get_field_output(self.frame, self.output_option, field_vector_length=1).get_values_array()
+        # Save the nodal temperature data into a .dat file
+        NT_file_folder = os.path.join(extracted_data_folder,'Nodal_Temperature')
+        if os.path.exists(NT_file_folder) == False:
+            os.mkdir(NT_file_folder)
+        np.savetxt(NT_file_folder + '\%s_%s.dat'%(self.output_option, frame_count), Nodal_Temperature, fmt='%-4.5e', delimiter=',')
+        
+        return float('nan')
 
     
 class plot_x_y_curve():
-    def __init__(self,xmin, xmax, ymin, ymax,data_vector,x_label,y_label,title,file_name):
+    def __init__(self,xmin, xmax, ymin, ymax,data_array,x_label,y_label,title,file_name):
         self.xmin = xmin
         self.xmax = xmax
         self.ymin = ymin
         self.ymax = ymax
-        self.data_x = [vector[0] for vector in data_vector]
-        self.data_y = [vector[1] for vector in data_vector]
+        self.data_x = data_array[:,0]
+        self.data_y = data_array[:,1]
         self.label_x = x_label
         self.label_y = y_label
         self.title_name = title
@@ -434,38 +450,40 @@ class plot_x_y_curve():
         plt.show()
         plt.show(block=True)
 
-def Output_filed_result(frame,output_option, output_suboption=None):
+def Output_filed_result(frame,output_option, dimension):
     if output_option == 'EVOL':
         EVOL_Total = output_field_access(frame,output_option).get_element_volume()
-        Variable_Total_Weighted = EVOL_Total
+        return EVOL_Total
     elif 'UVARM' in output_option:
         UVARM_Total_Weighted = output_field_access(frame,output_option).get_uvarm_value()
-        Variable_Total_Weighted = UVARM_Total_Weighted
+        return UVARM_Total_Weighted
     elif 'SDV' in output_option:
         SDV_Total_Weighted = output_field_access(frame,output_option).get_sdv_value()
-        Variable_Total_Weighted = SDV_Total_Weighted
+        return SDV_Total_Weighted
     elif output_option in ['S','S11','S22','S33','S12','S13','S23','SEQV','Mises']:
         Stress_Total_Weighted = output_field_access(frame,output_option).get_stress_value()
-        Variable_Total_Weighted = Stress_Total_Weighted
+        return Stress_Total_Weighted
     elif output_option in ['U','U1','U2','U3']:
         Displacement_Total_Weighted = output_field_access(frame,output_option).get_displacement_value()
-        Variable_Total_Weighted = Displacement_Total_Weighted
+        return Displacement_Total_Weighted
     elif output_option in ['LE', 'E']:
         Linear_Strain_Total_Weighted = output_field_access(frame,output_option).get_strain_value()
-        Variable_Total_Weighted = Linear_Strain_Total_Weighted
-    return Variable_Total_Weighted
+        return Linear_Strain_Total_Weighted
+    elif 'NT' in output_option:
+        Nodal_Temperature_Total_Weighted = output_field_access(frame, output_option, dimension).get_nt_value()
+        return Nodal_Temperature_Total_Weighted
 
-def extract_odb(working_directory, odb_file_name, output_option, output_suboption, dimension, 
+
+def extract_odb(working_directory, odb_file_name, output_option, output_index, dimension, 
                 specified_step, specified_frame,
                 xmin, xmax, ymin, ymax):
     global extracted_data_folder
     os.chdir(working_directory)
-
+    # Create the folder to store the extracted data
     extracted_data_folder = os.path.join(working_directory,'Extracted Results')
     if os.path.exists(extracted_data_folder) == False:
         os.mkdir(extracted_data_folder)
-    # os.chdir(extracted_data_folder)
-
+    # *********************************************************************************************************************
     logwrite('*'*70 + '\n' +
              '*' + '{0:^68}'.format('Extracting Data from ODB') + '*' + '\n' +
              '*'*70)
@@ -479,7 +497,7 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     # odb_file_name: The name of the ODB file
     # output_option: The name of output field parameter
     #           Example: UVARM2, S, U, etc.
-    # output_suboption: The name of output field subparameter
+    # output_index: The index of output field parameter
     #           Example: S: S11, S22, S33, S12, S13, S23 (If not specified, the Von Mises stress will be extracted)
     #                    U: U1, U2, U3
     # specified_step: The relative sequence number of the step
@@ -488,22 +506,25 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     #                    specified_step = None(default) means all steps
     # odb_file_name = 'Model_RVE.odb'
     # output_option = 'UVARM1'
-    # output_suboption = None
+    # output_index = None
     # specified_step = 1
     # specified_frame = None
     # *********************************************************************************************************************
     # Display the information of ODB file and output field parameter
     logwrite('{0:<25s}'.format('ODB file name') + ':' + odb_file_name)
-    logwrite('{0:<25s}'.format('Output field parameter') + ':' + output_option + '\t' + output_suboption + '\n' +
+    if output_index != '0':
+        output_option = output_option + output_index
+    logwrite('{0:<25s}'.format('Output field parameter') + ':' + output_option + '\n' +
              '-'*60)
     # Open the ODB file
     try:
         odb_file_path = os.path.join(working_directory,odb_file_name)
         logwrite('Odb file path: ' + odb_file_path)
-        odb = openOdb(odb_file_path,readOnly=True)
+        odb = openOdb(odb_file_path, readOnly=True)
         logwrite("Open the ODB file successfully")
-    except:
+    except:      
         try:
+            # The ODB file may be created by the old version of Abaqus, so we need to upgrade the ODB file
             upgrade_odb_file_name = 'upgraded_' + odb_file_name
             upgrade_odb_path = os.path.join(working_directory,upgrade_odb_file_name)
             logwrite("Fail to open the ODB file, try to upgrade the ODB file" + '\n' +
@@ -521,114 +542,94 @@ def extract_odb(working_directory, odb_file_name, output_option, output_suboptio
     # prettyprint(len(odb.steps.keys()))
     # os._exit(0)
     # --------------------------------------------------------------------------
-    # If the specified_step is None, the data in all steps will be extracted
+    # If the specified_step = 0, extract the data in every step
+    #                       = -1, extract the data in the last step
+    #                       = n, extract the data in the nth step
     # We can obtain the step name by odb.steps.keys()
     # This code is to get string of step name
-    step_num = len(odb.steps.keys())
-    step_name = []
     if specified_step == 0:
-        step_num = len(odb.steps.keys())
-        for i in range(step_num):
-            # Add the step name into the list
-            step_name.append(odb.steps.keys()[i])
+        steps_name = odb.steps.keys()
+        step_num = len(steps_name)
         logwrite('Extract the data from every step...')
     else:
         step_num = 1
         # Add the specified step name into the list
         if specified_step == -1:
+            steps_name = [odb.steps.keys()[-1]]
             logwrite('Extract the data from the last setp...')
-            step_name.append(odb.steps.keys()[-1])
         else:
+            steps_name = [odb.steps.keys()[specified_step-1]]
             logwrite('Extract the data from the ' + str(specified_frame) + 'th step...')
-            step_name.append(odb.steps.keys()[specified_step-1])
     # *********************************************************************************************************************
     # Extract the data in the every step
     # *********************************************************************************************************************
     # Prepare the data matrix for plotting
     frame_total = 0
-    for step_sequence in range(step_num):
-        step = odb.steps[step_name[step_sequence]]
+    for name in steps_name:
+        step = odb.steps[name]
         frame_total = frame_total + len(step.frames)
-    Data_plot = np.zeros([frame_total,2])
-    current_time = np.zeros([frame_total,1])
+    
     print("There are %s frames in total" % frame_total)
     # Prepare parameters related to output option
-    if output_option == 'EVOL':
-        field_vector_length = 2
-    if 'SDV' in output_option:
-        field_vector_length = 2
-        output_option = output_option + output_suboption
-    if 'UVARM' in output_option:
-        field_vector_length = 5
-        output_option = output_option + output_suboption
-    if output_option in ['U','U1','U2','U3']:
-        # 识别别是二维单元还是三维单元，二维单元只有两个分量，三维单元有三个分量，将这些结果都输出一下
-        field_vector_length = 2
-    if output_option in ['S','S11','S22','S33','S12','S13','S23','SEQV','Mises']:
-        field_vector_length = 3
-    if output_option in ['LE']:
-        field_vector_length = 3
     # ------------------------------------------------------------------
     # Define a golobal counter for the frames
     global frame_count
     frame_count = 0
-    for step_sequence in range(step_num):
-        logwrite('{0:-^70}'.format('Step: %s'%step_name[step_sequence]))
-        step = odb.steps[step_name[step_sequence]]
+    step_time = 0
+    for i, name in enumerate(steps_name):
+        logwrite('{0:-^70}'.format('Step: %s'%name))
+        step = odb.steps[name]
+        keywords = step.frames[0].fieldOutputs.keys()
+        logwrite('Available field outputs: %s' % keywords)
         # ----------------------------------------------------------------------------------------------------------------
         # Extract the data in the every frame
         # ----------------------------------------------------------------------------------------------------------------
-        # print(len(step.frames))
-        # 把关键字输出一下
-        # print(step.frames[0].fieldOutputs.keys())
-        # os._exit(0)
-        frame_number = len(step.frames)
         if specified_frame == 0:
+            Data_plot = np.zeros((frame_total,2))
             logwrite('Extract the data from every frame...')
             for frame in step.frames:
+                current_time = frame.frameValue + step_time
+                # Extract the data corresponding to the output option
+                Weighted_Variable = Output_filed_result(frame, output_option, dimension)
+                logwrite("Progress: Frame:%d\t%.2f s" %(frame_count,current_time))
                 
-                current_time[step_sequence] = frame.frameValue
-                Variable_Total_Weighted=Output_filed_result(frame,output_option)
-                # Data_plot[frame.incrementNumber,0] = current_time
-                # Data_plot[frame.incrementNumber,1] = Variable_Total_Weighted
-                time_total = np.sum(current_time)
-                # # Remove the first frame due to the initial value of time is zero
-                # if time_total == 0.0:
-                #     continue
-                try:
-                    Data_plot[frame_count,0] = time_total
-                    Data_plot[frame_count,1] = Variable_Total_Weighted
-                except:
-                    print('There is something wrong with the data matrix for plotting')
+                Data_plot[frame_count,0] = current_time
+                Data_plot[frame_count,1] = Weighted_Variable
+                
+                logwrite('The weighted %s is %.4f' %(output_option, Weighted_Variable))
                 frame_count += 1
-                logwrite("Progress: Frame:%d\t%.2f s" % (frame_count,time_total) + '\t' + "Equi. value:%f"%Variable_Total_Weighted)
-                # print("Progress: [{0}] {1:.2f}%".format("="*(frame_count + 1), finish_percent))
-            # print(Data_plot)
-            # Plot the curve of field output variable vs. time
-            try:
-                plot_x_y_curve(xmin, xmax, ymin, ymax, data_vector=Data_plot, 
-                            x_label='Time', y_label=output_option, title='%s-Time Curve'%output_option, 
-                            file_name=odb_file_name+'-%s-Time Curve'%output_option)
-                save_as_file(data_vector=Data_plot, file_name=odb_file_name+'%s-Time'%output_option)
-            except:
-                [rows_num, columns_num] = np.shape(Data_plot)
-                if columns_num != 2:
-                    logwrite('The data_vector array should have two columns')
-                logwrite('Plot the curve failed')
+            step_time = current_time
+        # ----------------------------------------------------------------------------------------------------------------
+        # Extract the data in the last frame
+        # ----------------------------------------------------------------------------------------------------------------
+        elif specified_frame == -1:
+            Data_plot = None
+            logwrite('Extract the data from the last frame...')
+            Weighted_Variable = Output_filed_result(step.frames[-1],output_option)
+            if Weighted_Variable != None:
+                logwrite('The weighted %s is %.4f' %(output_option, Weighted_Variable))
+        # ----------------------------------------------------------------------------------------------------------------
+        # Extract the data in the specified frame
+        # ----------------------------------------------------------------------------------------------------------------
         else:
-            # Get field output of specified frame
-            if specified_frame == -1:
-                logwrite('Extract the data from the last frame...')
-                Variable_Total_Weighted = Output_filed_result(step.frames[-1],output_option)
-                logwrite('The weighted %s of the specified frame is %f'%(output_option,Variable_Total_Weighted))
-            else:
-                logwrite('Extract the data from the ' + str(specified_frame) + 'th frame...')
-                Variable_Total_Weighted = Output_filed_result(step.frames[specified_frame-1],output_option)
-                logwrite('The weighted %s of the specified frame is %f'%(output_option,Variable_Total_Weighted))
+            Data_plot = None
+            logwrite('Extract the data from the ' + str(specified_frame) + 'th frame...')
+            Weighted_Variable = Output_filed_result(step.frames[specified_frame-1], output_option)
+            if Weighted_Variable != None:
+                logwrite('The weighted %s is %.4f' %(output_option, Weighted_Variable))
+    # *********************************************************************************************************************
+    # Plot the curve of the output field parameter w.r.t. time
+    # *********************************************************************************************************************
+    if Data_plot.any():
+        plot_x_y_curve(xmin, xmax, ymin, ymax, data_array=Data_plot, 
+                    x_label='Time', y_label=output_option, title='%s-Time Curve'%output_option, 
+                    file_name=odb_file_name+'-%s-Time Curve'%output_option)
+        np.savetxt(os.path.join(extracted_data_folder,odb_file_name+'%s-Time'%output_option),Data_plot,fmt='%-4.5e',delimiter=',')
+
     # *********************************************************************************************************************
     # The extraction is finished
     logwrite('{0:<25s}'.format('ODB file name') + ':' + odb_file_path + '\n' +
-             '{0:<25s}'.format('Output field parameter') + ':' + output_option + '\t' + output_suboption + '\n' +
+             '{0:<25s}'.format('Output field parameter') + ':' + output_option + '\n' +
              '{0:*^70}'.format('Finished'))
           
 if __name__ == '__main__':
@@ -647,7 +648,7 @@ if __name__ == '__main__':
     # *********************************************************************************************************************
     odb_file_path = args.odb_file
     output_option = args.output
-    output_suboption = args.suboption
+    output_index = args.suboption
     dimension = args.dimension
     specified_step = args.step
     specified_frame = args.frame
@@ -660,7 +661,7 @@ if __name__ == '__main__':
     # logfile_path = os.path.join(extracted_data_folder,'extract_odb.log')
     # if os.path.exists(logfile_path):
     #     os.remove(logfile_path)
-    extract_odb(working_directory, odb_file, output_option, output_suboption, dimension, 
+    extract_odb(working_directory, odb_file, output_option, output_index, dimension, 
                 specified_step, specified_frame,
                 xmin, xmax, ymin, ymax)
   

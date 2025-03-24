@@ -50,8 +50,8 @@ class create_offset_gui():
         # Creatinng the magnitude of offset
         self.Offest_Magnitude_label = ttk.Label(self.tab_Ele_num_offset, text="Offset magnitude")
         self.Offset_Magnitude_entry = ttk.Entry(self.tab_Ele_num_offset, width=10, justify='center')
-        # The default value of offset magnitude is 10000
-        self.Offset_Magnitude_entry.insert(tk.END, "10000")
+        # The default value of offset magnitude is 0: maximum number of elements in the first layer
+        self.Offset_Magnitude_entry.insert(tk.END, "0")
         # Creating the execute button
         self.button_run_EleNum_Offset = ttk.Button(self.tab_Ele_num_offset,text='Run',
                                               command=lambda: Run_in_new_thread(self.run_Ele_num_offset))
@@ -108,40 +108,22 @@ class create_offset_gui():
         print(Offset_files_path_list)
         # Get the magnitude of offset
         Offset_Magnitude = self.Offset_Magnitude_entry.get()
+        # Get the layer information
+        # ******************************************************************************************
+        layer_info = {
+                        self.First_layer_input_entry.get(): self.First_layer_multiplier_entry.get(),
+                        self.Second_layer_input_entry.get(): self.Second_layer_multiplier_entry.get(),
+                        self.Third_layer_input_entry.get(): self.Third_layer_multiplier_entry.get(),
+                        self.Fourth_layer_input_entry.get(): self.Fourth_layer_multiplier_entry.get()
+                        }
+
         if Offset_files_path == None:
             tk.messagebox.showerror("错误", "找不到Inp文件！")
             return
         elif len(Offset_files_path_list) == 1:
-            Offset_file_path = Offset_files_path_list[0]
-            [Offset_file_folder, Offset_file]= os.path.split(Offset_file_path)        
-            # *******************************************************************************************
-            # Writing layer information into a txt file, which will be read by EleNum_Offset.py
-            layer_info = [[self.First_layer_input_entry.get(),  self.First_layer_multiplier_entry.get()],
-                        [self.Second_layer_input_entry.get(), self.Second_layer_multiplier_entry.get()],
-                        [self.Third_layer_input_entry.get(),  self.Third_layer_multiplier_entry.get()],
-                        [self.Fourth_layer_input_entry.get(), self.Fourth_layer_multiplier_entry.get()]]
-            layer_info_file_path = os.path.join(Offset_file_folder,'layer_info.txt')
-            with open(layer_info_file_path, 'w') as layer_info_file:
-                for layer in layer_info:
-                    # layer[0] is the layer number, layer[1] is the multiplier
-                    layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
-                layer_info_file.write('Offset magnitude' + ',' + str(Offset_Magnitude) + '\n')
-            # *******************************************************************************************
-            Num_Offset(Offset_file_path, int(Offset_Magnitude))
+            Input_file_path = Offset_files_path_list[0]
+            Num_Offset(Input_file_path, int(Offset_Magnitude), layer_info)
         elif len(Offset_files_path_list) > 1:
             print('There are more than one inp files')
-            for Offset_file_path in Offset_files_path_list:
-                [Offset_file_folder, Offset_file]= os.path.split(Offset_file_path)
-                # *******************************************************************************************
-                # Writing layer information into a txt file, which will be read by EleNum_Offset.py
-                layer_info = [[self.First_layer_input_entry.get(),  self.First_layer_multiplier_entry.get()],
-                            [self.Second_layer_input_entry.get(), self.Second_layer_multiplier_entry.get()],
-                            [self.Third_layer_input_entry.get(),  self.Third_layer_multiplier_entry.get()],
-                            [self.Fourth_layer_input_entry.get(), self.Fourth_layer_multiplier_entry.get()]]
-                layer_info_file_path = os.path.join(Offset_file_folder,'layer_info.txt')
-                with open(layer_info_file_path, 'w') as layer_info_file:
-                    for layer in layer_info:
-                        # layer[0] is the layer number, layer[1] is the multiplier
-                        layer_info_file.write(str(layer[0]) + ',' + str(layer[1]) + '\n')
-                # *******************************************************************************************
-                Num_Offset(Offset_file_path, int(Offset_Magnitude))         
+            for Input_file_path in Offset_files_path_list:
+                Num_Offset(Input_file_path, int(Offset_Magnitude), layer_info)         

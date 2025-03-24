@@ -19,16 +19,16 @@ class create_odb_extract_gui():
         # Create a combobox for displaying available output options
         self.Output_options_label = ttk.Label(self.tab_odb_extract, text="Output options:")
         self.Output_options_combobox = ttk.Combobox(self.tab_odb_extract, width=10)
-        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV')
-        self.Output_suboptions_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
-        self.Output_suboptions_entry = ttk.Entry(self.tab_odb_extract, width=10)
-        self.Output_suboptions_entry.insert(tk.END, '1')
-        self.Output_options_combobox.current(5)
+        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV','NT')
+        self.output_index_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
+        self.output_index_entry = ttk.Entry(self.tab_odb_extract, width=10)
+        self.output_index_entry.insert(tk.END, '0')
+        self.Output_options_combobox.current(4)
         # Get necessary information for odb extract
         #---------------------------------Dimension---------------------------------#
         self.Dimension_label = ttk.Label(self.tab_odb_extract, text="Dimension:")
         self.Dimension_entry = ttk.Entry(self.tab_odb_extract, width=10)
-        self.Dimension_entry.insert(tk.END, "2")
+        self.Dimension_entry.insert(tk.END, "3")
         #-----------------------------------step------------------------------------#
         self.Step_label = ttk.Label(self.tab_odb_extract, text="Step:")
         self.Step_entry = ttk.Entry(self.tab_odb_extract, width=10)
@@ -68,8 +68,8 @@ class create_odb_extract_gui():
         # Get output options
         self.Output_options_label.grid(row=1, column=0, padx=5, pady=5,   sticky=tk.W)
         self.Output_options_combobox.grid(row=1, column=1, padx=5, pady=5,   sticky=tk.W)
-        self.Output_suboptions_label.grid(row=1, column=2, padx=5, pady=5,   sticky=tk.W)
-        self.Output_suboptions_entry.grid(row=1, column=3, padx=5, pady=5,   sticky=tk.W)
+        self.output_index_label.grid(row=1, column=2, padx=5, pady=5,   sticky=tk.W)
+        self.output_index_entry.grid(row=1, column=3, padx=5, pady=5,   sticky=tk.W)
         # Get necessary information for odb extract
         # Dimension
         self.Dimension_label.grid(row=2, column=0, padx=5, pady=5,   sticky=tk.W)
@@ -111,7 +111,7 @@ class create_odb_extract_gui():
         ABAQUS_env, ABAQUS_Execute = Get_ABAQUS_env()
         odb_file_path = self.odb_extract_file_entry.get()
         output_option = self.Output_options_combobox.get()
-        output_suboption = self.Output_suboptions_entry.get()
+        output_index = self.output_index_entry.get()
         dimension = self.Dimension_entry.get()
         specified_step = self.Step_entry.get()
         specified_frame = self.Frame_entry.get()
@@ -128,7 +128,7 @@ class create_odb_extract_gui():
             abaqus_command_line = [ABAQUS_Execute,'python', script_path,
                                    '-f',  odb_file_path,
                                    '-o',  output_option,
-                                   '-so', output_suboption,
+                                   '-so', output_index,
                                    '-d',  dimension,
                                    '-s',  specified_step,
                                    '-r',  specified_frame,
