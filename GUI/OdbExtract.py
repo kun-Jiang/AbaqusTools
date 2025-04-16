@@ -19,7 +19,7 @@ class create_odb_extract_gui():
         # Create a combobox for displaying available output options
         self.Output_options_label = ttk.Label(self.tab_odb_extract, text="Output options:")
         self.Output_options_combobox = ttk.Combobox(self.tab_odb_extract, width=10)
-        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV','NT')
+        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV','NT', 'GRADT','HFL')
         self.output_index_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
         self.output_index_entry = ttk.Entry(self.tab_odb_extract, width=10)
         self.output_index_entry.insert(tk.END, '0')

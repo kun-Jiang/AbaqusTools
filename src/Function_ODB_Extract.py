@@ -72,6 +72,10 @@ class Get_field_output():
             field = np.zeros((len(self.field_output_values)/4,self.field_vector_length))
         if 'NT' in self.output_option:
             field = np.zeros(len(self.field_output_values))
+        if self.output_option in ['GRADT','GRADT1','GRADT2','GRADT3']:
+            field = np.zeros((len(self.field_output_values)/4,self.field_vector_length))
+        if self.output_option in ['HFL','HFL1','HFL2','HFL3']:
+            field = np.zeros((len(self.field_output_values)/4, self.field_vector_length))
         # **********************************************************************
         # Obtain the output field values and store them in the array
         # There are kinds of output field, such as UVARM, EVOL, SDV, etc. 
@@ -190,7 +194,31 @@ class Get_field_output():
             elif 'NT' in self.output_option:
                 node_label = field_value.nodeLabel - 1
                 field[node_label] = field_value.data
-                
+            
+            # **************************************************************************************
+            # Output the heat flux of the element
+            # **************************************************************************************
+            elif 'HFL' in self.output_option:
+                # print(len(self.field_output_values)/4)
+                # prettyprint(self.current_frame)
+                # prettyprint(field_value)
+                # os._exit(0)
+                element_index = field_value.elementLabel-element_offset-1
+                inpt = field_value.integrationPoint
+                field[element_index,0] = field_value.elementLabel
+                if self.output_index == None:
+                    # If the output_index is not specified, default output the magnitude of the heat flux
+                    field[element_index,inpt] = field_value.magnitude
+            # **************************************************************************************
+            # Output the temperature gradient of the element
+            # **************************************************************************************
+            elif 'GRADT' in self.output_option:
+                element_index = field_value.elementLabel-element_offset-1
+                inpt = field_value.integrationPoint
+                field[element_index,0] = field_value.elementLabel
+                if self.output_index == None:
+                    # If the output_index is not specified, default output the magnitude of the temperature gradient
+                    field[element_index,inpt] = field_value.magnitude
         # print(field_value.elementLabel-1)
         return field
     
@@ -206,7 +234,7 @@ class output_field_access():
         
         self.dimension = dimension
         self.element_type = 'isoparametric'
-        self.coords = self.getNodalCoordinates()
+        # self.coords = self.getNodalCoordinates()
         # print(self.EleConnectivity)
     def getNodalCoordinates(self):
         nodes = self.frame.fieldOutputs[self.output_option].values[0].instance.nodes
@@ -245,19 +273,21 @@ class output_field_access():
                 gauss_weight = np.array([1,1,1,1])
         
         
-        coords = self.coords
-        # !!!! Need to be modified
-        # The connectivity of the element is hard coded here, because the first and second layer
-        # of the element connectivity are repeated, so only the third layer is used
-        connectivity = self.EleConnectivity[np.shape(self.EleConnectivity)[0]/3*2:,:]
+        coords = self.getNodalCoordinates()
+        # # !!!! Need to be modified
+        # # The connectivity of the element is hard coded here, because the first and second layer
+        # # of the element connectivity are repeated, so only the third layer is used
+        # connectivity = self.EleConnectivity[np.shape(self.EleConnectivity)[0]/3*2:,:]
+        connectivity = self.EleConnectivity
         field_integ_total = 0
         field_integ_element = np.zeros(len(connectivity))
         for i,nodes in enumerate(connectivity):
             node_coords = np.zeros((4,2))
+            integ = 0
             for k,node in enumerate(nodes):
                 node_coords[k] = coords[node-1,:2]
             for j in range(len(gauss_point)):
-                integ = 0
+                
                 xi, eta = gauss_point[j]
                 weight = gauss_weight[j]
                 N, dN_dxi = self.shape_function(xi, eta)
@@ -269,10 +299,10 @@ class output_field_access():
                     J[1, 0] += dN_dxi[1, l] * node_coords[l, 0]
                     J[1, 1] += dN_dxi[1, l] * node_coords[l, 1]
                 detJ = np.linalg.det(J)
-                integ = field_values[i,j] * detJ * weight
-                field_integ_total += integ
+                integ += field_values[i,j] * detJ * weight
+            field_integ_total += integ
 
-                field_integ_element[i] += integ
+            field_integ_element[i] += integ
         return field_integ_element, field_integ_total
     
     def shape_function(self, xi, eta):
@@ -416,8 +446,51 @@ class output_field_access():
         np.savetxt(NT_file_folder + '\%s_%s.dat'%(self.output_option, frame_count), Nodal_Temperature, fmt='%-4.5e', delimiter=',')
         
         return float('nan')
-
     
+    def get_temp_gradient_value(self):
+        Temp_grad = Get_field_output(self.frame, self.output_option, field_vector_length=5).get_values_array()
+        # Calculate the temperature gradient of every element by the gauss integration method
+        if self.method == 'gauss_integration':
+            Temp_grad_integ, Temp_grad_total = self.gauss_integ(Temp_grad[:,1:])
+            EVOL_Total = self.get_element_volume()
+            Temp_grad_Average = Temp_grad_total / EVOL_Total
+        elif self.method == 'volume_average':
+            [rows_num, columns_num] = np.shape(Temp_grad)
+            Temp_grad_integ = np.zeros([rows_num,1])
+            intergration_point_Weight = [[1./4],[1./4],[1./4],[1./4]]
+            # Weight the temperature gradient of every integration point in element by the intergration point weight
+            Temp_grad_integ = np.dot(Temp_grad,intergration_point_Weight)
+            Element_Weight = self.get_element_weight()
+            Temp_grad_total = np.sum(Temp_grad_integ*Element_Weight)
+        # Save the temperature gradient data into a .dat file
+        Temp_grad_file_folder = os.path.join(extracted_data_folder,'Temperature_Gradient')
+        if os.path.exists(Temp_grad_file_folder) == False:
+            os.mkdir(Temp_grad_file_folder)
+        np.savetxt(Temp_grad_file_folder + '\%s_%s.dat'%(self.output_option, frame_count), Temp_grad, fmt='%-4.5e', delimiter=',')
+        return Temp_grad_Average
+
+    def get_hflux_value(self):
+        Heat_flux = Get_field_output(self.frame, self.output_option, field_vector_length=5).get_values_array()
+        # Calculate the heat flux of every element by the gauss integration method
+        if self.method == 'gauss_integration':
+            Heat_flux_integ, Heat_flux_total = self.gauss_integ(Heat_flux[:,1:])
+            EVOL_Total = self.get_element_volume()
+            Total_HFL_Average = Heat_flux_total / EVOL_Total
+        elif self.method == 'volume_average':
+            [rows_num, columns_num] = np.shape(Heat_flux)
+            Heat_flux_integ = np.zeros([rows_num,1])
+            intergration_point_Weight = [[1./4],[1./4],[1./4],[1./4]]
+            # Weight the heat flux of every integration point in element by the intergration point weight
+            Heat_flux_integ = np.dot(Heat_flux,intergration_point_Weight)
+            Element_Weight = self.get_element_weight()
+            Heat_flux_total = np.sum(Heat_flux_integ*Element_Weight)
+        # Save the heat flux data into a .dat file
+        HFL_file_folder = os.path.join(extracted_data_folder,'Heat_Flux')
+        if os.path.exists(HFL_file_folder) == False:
+            os.mkdir(HFL_file_folder)
+        np.savetxt(HFL_file_folder + '\%s_%s.dat'%(self.output_option, frame_count), Heat_flux, fmt='%-4.5e', delimiter=',')
+        
+        return Total_HFL_Average
 class plot_x_y_curve():
     def __init__(self,xmin, xmax, ymin, ymax,data_array,x_label,y_label,title,file_name):
         self.xmin = xmin
@@ -472,6 +545,12 @@ def Output_filed_result(frame,output_option, dimension):
     elif 'NT' in output_option:
         Nodal_Temperature_Total_Weighted = output_field_access(frame, output_option, dimension).get_nt_value()
         return Nodal_Temperature_Total_Weighted
+    elif 'HFL' in output_option:
+        Heat_Flux_Total_Weighted = output_field_access(frame,output_option, dimension).get_hflux_value()
+        return Heat_Flux_Total_Weighted
+    elif 'GRADT' in output_option:
+        Temp_grad_Total_Weighted = output_field_access(frame,output_option, dimension).get_temp_gradient_value()
+        return Temp_grad_Total_Weighted
 
 
 def extract_odb(working_directory, odb_file_name, output_option, output_index, dimension, 
@@ -591,6 +670,9 @@ def extract_odb(working_directory, odb_file_name, output_option, output_index, d
                 current_time = frame.frameValue + step_time
                 # Extract the data corresponding to the output option
                 Weighted_Variable = Output_filed_result(frame, output_option, dimension)
+                prettyprint(frame.frameValue)
+                prettyprint(frame.frameId)
+                prettyprint(frame.description)
                 logwrite("Progress: Frame:%d\t%.2f s" %(frame_count,current_time))
                 
                 Data_plot[frame_count,0] = current_time
@@ -624,7 +706,7 @@ def extract_odb(working_directory, odb_file_name, output_option, output_index, d
         plot_x_y_curve(xmin, xmax, ymin, ymax, data_array=Data_plot, 
                     x_label='Time', y_label=output_option, title='%s-Time Curve'%output_option, 
                     file_name=odb_file_name+'-%s-Time Curve'%output_option)
-        np.savetxt(os.path.join(extracted_data_folder,odb_file_name+'%s-Time'%output_option),Data_plot,fmt='%-4.5e',delimiter=',')
+        np.savetxt(os.path.join(extracted_data_folder,odb_file_name+'%s-Time.dat'%output_option),Data_plot,fmt='%-4.5e',delimiter=',')
 
     # *********************************************************************************************************************
     # The extraction is finished

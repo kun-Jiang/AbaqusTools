@@ -33,20 +33,6 @@ class Num_Offset:
         # ***************************************************************************
         logconfig('NumOffset.log',self.EleNum_Offset_folder)
         # ***************************************************************************
-        #              Automatically calculate the offset magnitude
-        # ***************************************************************************
-        # If the offset magnitude is given as 0, then the offset magnitude will be
-        # the maximum element number in the inp file.
-        connectivity = np.loadtxt(self.input_file_path,delimiter=',',dtype=int)
-        elements_num = connectivity[:,0]
-        if self.Offset_Magnitude == 0:
-            self.Offset_Magnitude = np.max(elements_num)
-        elif self.Offset_Magnitude < np.max(elements_num):
-            self.Offset_Magnitude = np.max(elements_num)
-            logging.warning(
-                "The offset magnitude is smaller than the maximum element"
-                "number in the inp file, the offset magnitude will be set to the maximum element number.")
-        # ***************************************************************************
         #               Adding the offset to the element number
         # ***************************************************************************
         # origin_file_folder : the folder of the origin inp file
@@ -140,6 +126,19 @@ class Num_Offset:
                 # Operating offset through numpy
                 output_file = '%s.inp'%layer_file_name
                 Element_Connectivity = np.loadtxt(self.input_file_path, delimiter=',', dtype=int)
+                # ***************************************************************************
+                #              Automatically calculate the offset magnitude
+                # ***************************************************************************
+                # If the offset magnitude is given as 0, then the offset magnitude will be
+                # the maximum element number in the inp file.
+                elements_num = Element_Connectivity[:,0]
+                if self.Offset_Magnitude == 0:
+                    self.Offset_Magnitude = np.max(elements_num)
+                elif self.Offset_Magnitude < np.max(elements_num):
+                    self.Offset_Magnitude = np.max(elements_num)
+                    logging.warning(
+                        "The offset magnitude is smaller than the maximum element"
+                        "number in the inp file, the offset magnitude will be set to the maximum element number.")
                 # Adding the offset on the element label
                 Element_Connectivity[:,0] += EleNumOffset
                 np.savetxt(output_file, Element_Connectivity, fmt='%d', delimiter=',')

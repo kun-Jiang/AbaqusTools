@@ -1,28 +1,14 @@
 import os
+import shutil
 
 def Get_ABAQUS_env():
-    env_dist = os.environ
-    PATH_address = env_dist['PATH']
-    # print(PATH_address)
-    PATH_address = PATH_address.split(';')
-    for address in PATH_address:
-        if ('aba' or 'abaqus') in address.lower():
-            if 'command' in address.lower():
-                ABAQUS_env, _ = os.path.split(address)
-            for root, dirs, files in os.walk(address):
-                try:
-                    for dir in dirs:
-                        if 'command' in dir.lower():
-                            ABAQUS_env = address
-                            break
-                except:
-                    ABAQUS_env = address
-            break
-    files = os.listdir(ABAQUS_env)
-    for file in files:
-        if 'abaqus' in file.lower():
-            ABAQUS_Executable = os.path.join(ABAQUS_env, file)
-    return ABAQUS_env, ABAQUS_Executable
+    # Search for the abaqus.bat executable
+    abaqus_executable = shutil.which("abaqus.bat")
+    if abaqus_executable:
+        abaqus_env = os.path.dirname(abaqus_executable)
+        return abaqus_env, abaqus_executable
+    else:
+        raise FileNotFoundError("Abaqus executable (abaqus.bat) not found in PATH.")
 
 
 if __name__ == '__main__':

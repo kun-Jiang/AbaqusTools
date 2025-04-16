@@ -96,7 +96,7 @@ class Inpsplit:
             judge = True
         elif line_start != None and keyword == '*nset':
             # If the line contains 'nset', write the line to the new inp file
-            # InpFile_split.write(line)
+            InpFile_split.write(line_start)
             line, Nset_Name = self.NsetAccess(InpFile_lines_iter, line_start, InpFile_split)
             if Nset_Name != None:
                 InpFile_split.write('*include, input=Model\\Nset_%s.inp\n'%Nset_Name)
@@ -216,6 +216,7 @@ class Inpsplit:
                 ElsetFile.write(line)
     
     def NsetAccess(self,InpFile_lines_iter:iter, line_start:str,InpFile_split:str)->str:
+        # FIXME: The function is not robust enough to handle all the cases.
         # Remove the '\n' at the end of the string
         line_temp = line_start.strip()
         line_split = line_temp.split(',')
@@ -245,7 +246,8 @@ class Inpsplit:
             logging.error('There is an error when extracting the nset name\n' +
                           'Error in line: ' + line_start,
                           exc_info=True)
-        InpFile_split.write(line_start)
+            return line_start, None
+        # InpFile_split.write(line_start)
         with open('Nset_' + Nset_Name + '.inp','w') as NsetFile:
             while True:
                 # Iterate each line of the original inp file to extract the
@@ -253,7 +255,7 @@ class Inpsplit:
                 line = next(InpFile_lines_iter, None)
                 if line == None:
                     # The iterator reaches the end of the file
-                    break
+                    return None, Nset_Name
                 if '*' in line:
                     # If the line contains '*', return the line and Nset_Name and break the loop
                     return line, Nset_Name
