@@ -208,7 +208,7 @@ class Inpsplit:
                 line = next(InpFile_lines_iter, None)
                 if line == None:
                     # The iterator reaches the end of the file
-                    break
+                    return None, Elset_Name
                 if '*' in line:
                     # If the line contains '*', return the line and Elset_Name and break the loop
                     return line, Elset_Name

@@ -19,7 +19,7 @@ class create_odb_extract_gui():
         # Create a combobox for displaying available output options
         self.Output_options_label = ttk.Label(self.tab_odb_extract, text="Output options:")
         self.Output_options_combobox = ttk.Combobox(self.tab_odb_extract, width=10)
-        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','UVARM','SDV','NT', 'GRADT','HFL')
+        self.Output_options_combobox['values'] = ('S','U','E','LE','EVOL','IVOL','UVARM','SDV','NT','TEMP', 'GRADT','HFL')
         self.output_index_label = ttk.Label(self.tab_odb_extract, text="Suboptions:")
         self.output_index_entry = ttk.Entry(self.tab_odb_extract, width=10)
         self.output_index_entry.insert(tk.END, '0')
@@ -123,7 +123,8 @@ class create_odb_extract_gui():
             tk.messagebox.showerror("Error", "Please select an file")
             return
         else:
-            odb_extract_py_file_path = os.path.join(self.working_directory,'src\Function_ODB_Extract.py')
+            odb_extract_py_file_path = os.path.join(self.working_directory,'src/Function_ODB_Extract.py')
+            # odb_extract_py_file_path = os.path.join(self.working_directory,'src/Extract_odb.py')
             script_path = odb_extract_py_file_path
             abaqus_command_line = [ABAQUS_Execute,'python', script_path,
                                    '-f',  odb_file_path,

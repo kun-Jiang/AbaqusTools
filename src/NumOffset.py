@@ -75,7 +75,7 @@ class Num_Offset:
         # the file contains elements define information, so node number
         # in line don't need to be offseted.
         Offset_mode = 1
-        if 'element' in InpFile_prefix.lower():
+        if InpFile_prefix.lower() in ['element', 'node']:
             Offset_mode = 2
         logging.info("{0:<40}:{1:^15}".format('Input file prefix',InpFile_prefix))
         logging.info("{0:<40}:{1:^15}".format('Offset mode',Offset_mode))
@@ -124,24 +124,49 @@ class Num_Offset:
                         InpFile.write(offset_line + '\n')
             elif Offset_mode == 2:
                 # Operating offset through numpy
-                output_file = '%s.inp'%layer_file_name
-                Element_Connectivity = np.loadtxt(self.input_file_path, delimiter=',', dtype=int)
-                # ***************************************************************************
-                #              Automatically calculate the offset magnitude
-                # ***************************************************************************
-                # If the offset magnitude is given as 0, then the offset magnitude will be
-                # the maximum element number in the inp file.
-                elements_num = Element_Connectivity[:,0]
-                if self.Offset_Magnitude == 0:
-                    self.Offset_Magnitude = np.max(elements_num)
-                elif self.Offset_Magnitude < np.max(elements_num):
-                    self.Offset_Magnitude = np.max(elements_num)
-                    logging.warning(
-                        "The offset magnitude is smaller than the maximum element"
-                        "number in the inp file, the offset magnitude will be set to the maximum element number.")
-                # Adding the offset on the element label
-                Element_Connectivity[:,0] += EleNumOffset
-                np.savetxt(output_file, Element_Connectivity, fmt='%d', delimiter=',')
+                if InpFile_prefix.lower() == 'element':
+                    # If the prefix is 'Element', then the file contains elements define information.
+                    # So we need to add the offset on the first number in line.
+                    # E.g. 1,2,3,4,5 --> 10001,2,3,4,5
+                    # E.g. 1,2,3,4 --> 10001,2,3,4
+                    output_file = '%s.inp'%layer_file_name
+                    Element_Connectivity = np.loadtxt(self.input_file_path, delimiter=',', dtype=int)
+                    # ***************************************************************************
+                    #              Automatically calculate the offset magnitude
+                    # ***************************************************************************
+                    # If the offset magnitude is given as 0, then the offset magnitude will be
+                    # the maximum element number in the inp file.
+                    elements_num = Element_Connectivity[:,0]
+                    if self.Offset_Magnitude == 0:
+                        self.Offset_Magnitude = np.max(elements_num)
+                    elif self.Offset_Magnitude < np.max(elements_num):
+                        self.Offset_Magnitude = np.max(elements_num)
+                        logging.warning(
+                            "The offset magnitude is smaller than the maximum element"
+                            "number in the inp file, the offset magnitude will be set to the maximum element number.")
+                    # Adding the offset on the element label
+                    Element_Connectivity[:,0] += EleNumOffset
+                    # Element_Connectivity[:,1:] += 180280
+                    np.savetxt(output_file, Element_Connectivity, fmt='%d', delimiter=',')
+                elif InpFile_prefix.lower() == 'node':
+                    output_file = '%s.inp'%layer_file_name
+                    node_coordinate = np.loadtxt(self.input_file_path, delimiter=',', dtype=float)
+                    # ***************************************************************************
+                    #              Automatically calculate the offset magnitude
+                    # ***************************************************************************
+                    # If the offset magnitude is given as 0, then the offset magnitude will be
+                    # the maximum node number in the inp file.
+                    node_num = node_coordinate[:,0]
+                    if self.Offset_Magnitude == 0:
+                        self.Offset_Magnitude = np.max(node_num)
+                    elif self.Offset_Magnitude < np.max(node_num):
+                        self.Offset_Magnitude = np.max(node_num)
+                        logging.warning(
+                            "The offset magnitude is smaller than the maximum node"
+                            "number in the inp file, the offset magnitude will be set to the maximum node number.")
+                    # Adding the offset on the node label
+                    node_coordinate[:,0] += EleNumOffset
+                    np.savetxt(output_file, node_coordinate, fmt='%d,%.16e,%.16e,%.16e', delimiter=',')
                 # Operating offset through string manipulation which seems to be faster, but I don't know why.
                 # with open("%s.inp"%layer_file_name,'w') as InpFile:
                 #     for Real_line in Inp_Origin_lines:
